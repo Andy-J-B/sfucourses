@@ -2,7 +2,7 @@ import React from "react";
 import { Hero, HeroSearch } from "@components";
 import Link from "next/link";
 import LandingPageHeroSrc from "../assets/images/landing-page/hero.webp";
-import { Search, Calendar, GitBranch, Book } from "react-feather";
+import { Search, Calendar, GitBranch, Book, Cpu } from "react-feather";
 import { PiGraphFill } from "react-icons/pi";
 
 const features = [
@@ -21,11 +21,18 @@ const features = [
     color: "var(--colour-cyber-500)",
   },
   {
+    title: "Scheduler",
+    description: "Auto-generate optimized schedules from your transcript",
+    href: "/scheduler",
+    icon: Cpu,
+    color: "#7c8cf8",
+  },
+  {
     title: "Graph",
     description: "Visualize prerequisites and course paths",
     href: "/graph",
     icon: PiGraphFill,
-    color: "#7c8cf8",
+    color: "#f8a47c",
   },
   {
     title: "Degree Planner",

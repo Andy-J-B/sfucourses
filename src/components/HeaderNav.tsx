@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import { GlobalSearch } from "./GlobalSearch";
 import { ThemeToggle } from "./ThemeToggle";
-import { Home, Search, Calendar, Users, Book } from "react-feather";
+import { Home, Search, Calendar, Users, Book, Cpu } from "react-feather";
 import { PiGraphFill } from "react-icons/pi";
 
 export const HeaderNav: React.FC = () => {
@@ -108,6 +108,9 @@ export const HeaderNav: React.FC = () => {
             <Link href="/schedule" className="page-link" prefetch={false}>
               schedule
             </Link>
+            <Link href="/scheduler" className="page-link" prefetch={false}>
+              scheduler
+            </Link>
             <Link href="/graph" className="page-link" prefetch={false}>
               graph
             </Link>
@@ -144,6 +147,15 @@ export const HeaderNav: React.FC = () => {
         >
           <Calendar size={20} />
           <span>Schedule</span>
+        </Link>
+        <Link
+          href="/scheduler"
+          className={`mobile-nav-item ${
+            isActivePath("/scheduler") ? "active" : ""
+          }`}
+        >
+          <Cpu size={20} />
+          <span>Scheduler</span>
         </Link>
         <Link
           href="/graph"

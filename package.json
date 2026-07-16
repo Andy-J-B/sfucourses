@@ -50,6 +50,7 @@
     "react-select": "^5.10.2",
     "react-tooltip": "^5.29.1",
     "recharts": "^3.3.0",
+    "formidable": "^3.5.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -57,6 +58,7 @@
     "@types/node": "20.9.0",
     "@types/pako": "^2.0.3",
     "@types/papaparse": "^5.5.2",
+    "@types/formidable": "^3.4.0",
     "eslint": "8.22.0",
     "eslint-config-next": "12.2.5",
     "husky": "^8.0.3",
