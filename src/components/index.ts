@@ -41,3 +41,6 @@ export { CatalogManager } from "./CatalogManager";
 export { DraggablePanel } from "./DraggablePanel";
 export { ReviewCharts } from "./ReviewCharts";
 export { ThemeToggle } from "./ThemeToggle";
+export { TranscriptUpload } from "./TranscriptUpload";
+export { PreferenceForm } from "./PreferenceForm";
+export { ScheduleResults } from "./ScheduleResults";
