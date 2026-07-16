@@ -173,3 +173,32 @@ export interface CourseReviewSummary {
   avg_rating: number;
   avg_difficulty: number;
 }
+
+export interface SchedulerPreferences {
+  term: string;
+  desiredCourses: string[];
+  maxCourses: number;
+  maxCredits: number;
+  preferredTimeStart: string;
+  preferredTimeEnd: string;
+  avoidDays: string[];
+  campusPreferences: string[];
+}
+
+export interface GeneratedSchedule {
+  id: string;
+  courses: CourseWithSectionDetails[];
+  timeBlocks: TimeBlock[];
+  qualityScore: number;
+  qualityLabel: string;
+  reasoning: string;
+  tags: string[];
+}
+
+export interface ParsedTranscriptCourse {
+  code: string;
+  name?: string;
+  term: string;
+  grade?: string;
+  units_completed?: number;
+}
