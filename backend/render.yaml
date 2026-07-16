@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: sfu-scheduler-api
+    runtime: image
+    image:
+      url: Dockerfile
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+    healthCheckPath: /health
+    autoDeploy: true
