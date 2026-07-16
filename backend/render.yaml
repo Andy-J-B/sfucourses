@@ -1,8 +1,7 @@
 services:
   - type: web
     name: sfu-scheduler-api
-    runtime: image
-    image:
-      url: Dockerfile
+    env: docker
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true
