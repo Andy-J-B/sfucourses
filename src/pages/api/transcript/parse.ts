@@ -1,11 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import formidable from "formidable";
 import fs from "fs";
+import { parseTranscriptText } from "@utils/transcriptParser";
 
 export const config = { api: { bodyParser: false } };
-
-const PYTHON_SERVICE_URL =
-  process.env.PYTHON_SERVICE_URL || "http://localhost:8000";
 
 export default async function handler(
   req: NextApiRequest,
@@ -29,25 +27,18 @@ export default async function handler(
     }
 
     const fileBuffer = fs.readFileSync(file.filepath);
-    const formData = new FormData();
-    formData.append(
-      "file",
-      new Blob([fileBuffer], { type: "application/pdf" }),
-      file.originalFilename || "transcript.pdf"
-    );
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: new Uint8Array(fileBuffer) });
+    const pdfResult = await parser.getText();
+    await parser.destroy();
+    const data = { text: pdfResult.text };
 
-    const response = await fetch(`${PYTHON_SERVICE_URL}/ocr`, {
-      method: "POST",
-      body: formData,
+    const result = parseTranscriptText(data.text);
+
+    return res.status(200).json({
+      courses: result.courses,
+      major: result.major,
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      return res.status(response.status).json(error);
-    }
-
-    const result = await response.json();
-    return res.status(200).json(result);
   } catch (error) {
     console.error("Transcript parse error:", error);
     return res.status(500).json({ error: "Failed to process transcript" });

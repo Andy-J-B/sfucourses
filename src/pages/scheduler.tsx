@@ -46,7 +46,7 @@ const SchedulerPage = () => {
       setError(null);
 
       try {
-        const result = await generateSchedules(completedCourses, prefs);
+        const result = await generateSchedules(prefs.desiredCourses, prefs);
         setGeneratedSchedules(result.schedules);
         if (result.schedules.length > 0) {
           setSelectedSchedule(result.schedules[0]);
@@ -63,7 +63,6 @@ const SchedulerPage = () => {
       }
     },
     [
-      completedCourses,
       setPreferences,
       setGeneratedSchedules,
       setSelectedSchedule,

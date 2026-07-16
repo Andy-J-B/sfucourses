@@ -1,57 +1,33 @@
 import { CourseWithSectionDetails } from "@types";
+import {
+  parseTranscriptText,
+  parseTextTranscript,
+  ParsedCourse,
+} from "./transcriptParser";
+import {
+  generateSchedules as generateSchedulesLocal,
+  SchedulerPreferences,
+} from "./scheduleGenerator";
 
-interface CompletedCourse {
-  code: string;
-  term: string;
-  grade?: string;
-}
-
-interface SchedulerPreferences {
-  term: string;
-  desiredCourses: string[];
-  maxCourses: number;
-  maxCredits: number;
-  preferredTimeStart: string;
-  preferredTimeEnd: string;
-  avoidDays: string[];
-  campusPreferences: string[];
-}
-
-interface ParsedTranscriptCourse {
-  code: string;
-  name: string;
-  term: string;
-  grade?: string;
-  units_completed: number;
-  grade_points: number;
-  class_average?: string;
-  enrollment: number;
-}
+export type { ParsedCourse, SchedulerPreferences };
 
 interface ParseTranscriptResponse {
-  courses: ParsedTranscriptCourse[];
-  confidence: number;
+  courses: ParsedCourse[];
+  major?: string;
 }
 
-interface GeneratedSchedule {
-  id: string;
-  courses: CourseWithSectionDetails[];
-  qualityScore: number;
-  qualityLabel: string;
-  reasoning: string;
-  tags: string[];
-}
-
-interface OptimizeScheduleResponse {
-  schedules: GeneratedSchedule[];
+interface GenerateScheduleResponse {
+  schedules: ReturnType<typeof generateSchedulesLocal>;
   total: number;
   timing: {
-    total_seconds: number;
-    solutions_found: number;
-    solver_status: string;
+    total_ms: number;
   };
 }
 
+/**
+ * Parse a PDF transcript file by sending it to a server-side API route.
+ * The API route uses pdf-parse (Node.js) to extract text from the PDF.
+ */
 export async function parseTranscriptFile(
   file: File
 ): Promise<ParseTranscriptResponse> {
@@ -71,48 +47,55 @@ export async function parseTranscriptFile(
   return response.json();
 }
 
+/**
+ * Generate optimized schedules using client-side backtracking algorithm.
+ * Fetches available sections from the existing API, then runs the optimizer.
+ */
 export async function generateSchedules(
-  completedCourses: CompletedCourse[],
+  desiredCourses: string[],
   preferences: SchedulerPreferences
-): Promise<OptimizeScheduleResponse> {
-  const response = await fetch("/api/schedule/optimize", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ completedCourses, ...preferences }),
+): Promise<GenerateScheduleResponse> {
+  const startTime = performance.now();
+
+  const sectionsPromises = desiredCourses.map(async (courseCode) => {
+    const [dept, number] = courseCode.split(" ");
+    if (!dept || !number) return null;
+    try {
+      const data = await import("./index").then((mod) =>
+        mod.getCourseAPIData(
+          `/sections?term=${encodeURIComponent(
+            preferences.term
+          )}&dept=${encodeURIComponent(dept)}&number=${encodeURIComponent(
+            number
+          )}`
+        )
+      );
+      return data?.[0] || null;
+    } catch (error) {
+      console.error(`Failed to fetch sections for ${courseCode}:`, error);
+      return null;
+    }
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to generate schedules");
+  const sectionsData = (await Promise.all(sectionsPromises)).filter(
+    Boolean
+  ) as CourseWithSectionDetails[];
+
+  if (sectionsData.length === 0) {
+    throw new Error("No sections found for the specified courses");
   }
 
-  return response.json();
+  const schedules = generateSchedulesLocal(sectionsData, preferences);
+
+  const elapsed = performance.now() - startTime;
+
+  return {
+    schedules,
+    total: schedules.length,
+    timing: {
+      total_ms: Math.round(elapsed),
+    },
+  };
 }
 
-export function parseTextTranscript(text: string): CompletedCourse[] {
-  const lines = text.split("\n").filter((l) => l.trim());
-  const courses: CompletedCourse[] = [];
-  let currentTerm = "";
-
-  for (const line of lines) {
-    const termMatch = line.match(/(Fall|Spring|Summer)\s+(\d{4})/);
-    if (termMatch) {
-      currentTerm = `${termMatch[1]} ${termMatch[2]}`;
-      continue;
-    }
-
-    const courseMatch = line.match(/([A-Z]{2,6})\s+(\d{3}[A-Z]?)/);
-    if (courseMatch && currentTerm) {
-      const gradeMatch = line.match(
-        /\b(A[A+-]?|B[+-]?|C[+-]?|D[+-]?|F|P|N|W|I)\b/
-      );
-      courses.push({
-        code: `${courseMatch[1]} ${courseMatch[2]}`,
-        term: currentTerm,
-        grade: gradeMatch ? gradeMatch[1] : undefined,
-      });
-    }
-  }
-
-  return courses;
-}
+export { parseTextTranscript };
