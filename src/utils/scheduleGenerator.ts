@@ -9,6 +9,7 @@ interface SchedulerPreferences {
   desiredCourses: string[];
   maxCourses: number;
   maxCredits: number;
+  minCredits: number;
   preferredTimeStart: string;
   preferredTimeEnd: string;
   avoidDays: string[];
@@ -200,6 +201,16 @@ function backtrack(
       currentSlots.map((s) => s.course.dept + s.course.number)
     ).size;
     if (courseCount > preferences.maxCourses) return;
+
+    const totalCredits = [
+      ...new Set(currentSlots.map((s) => s.course.dept + s.course.number)),
+    ].reduce((sum, key) => {
+      const course = currentSlots.find(
+        (s) => s.course.dept + s.course.number === key
+      )!.course;
+      return sum + (parseFloat(course.units) || 3);
+    }, 0);
+    if (totalCredits < preferences.minCredits) return;
 
     const { score, tags, reasoning } = scoreSchedule(currentSlots, preferences);
 

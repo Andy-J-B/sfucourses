@@ -179,6 +179,7 @@ export interface SchedulerPreferences {
   desiredCourses: string[];
   maxCourses: number;
   maxCredits: number;
+  minCredits: number;
   preferredTimeStart: string;
   preferredTimeEnd: string;
   avoidDays: string[];
