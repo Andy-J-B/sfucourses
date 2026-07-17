@@ -13,17 +13,28 @@
   }
 
   &__dropzone {
-    border: 2px dashed var(--colour-neutral-400);
-    border-radius: $border-radius;
-    padding: 3rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
+    background: var(--colour-neutral-1100);
+    border: 1px solid var(--colour-neutral-1000);
+    border-radius: 0.75rem;
+    padding: 2rem 1.5rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
 
     &:hover,
     &--active {
-      border-color: var(--colour-sosy-green-500);
-      background: var(--colour-sosy-green-100);
+      border-color: var(--colour-neutral-800);
+      background: var(--colour-neutral-1000);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(var(--colour-black-rgb), 0.25);
+
+      p,
+      span {
+        color: var(--colour-neutral-100);
+      }
     }
   }
 
@@ -36,12 +47,24 @@
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
+
+    p {
+      font-weight: 700;
+      color: var(--colour-neutral-100);
+    }
+
+    span {
+      font-size: 0.875rem;
+      color: var(--colour-neutral-500);
+      font-weight: 500;
+    }
   }
 
   &__icon {
     width: 3rem;
     height: 3rem;
     color: var(--colour-neutral-500);
+    transition: color 0.2s ease;
   }
 
   &__paste-area {
@@ -53,8 +76,8 @@
     font-family: monospace;
     font-size: 0.875rem;
     resize: vertical;
-    background: var(--colour-neutral-000);
-    color: var(--colour-neutral-900);
+    background: var(--colour-neutral-1200);
+    color: var(--colour-neutral-000);
 
     &:focus {
       outline: none;
@@ -122,7 +145,8 @@
 .mode-btn {
   padding: 0.5rem 1rem;
   border: 1px solid var(--colour-neutral-300);
-  background: var(--colour-neutral-000);
+  background: var(--colour-neutral-1200);
+  color: var(--colour-neutral-000);
   border-radius: $border-radius;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -139,14 +163,22 @@
 }
 
 .link-button {
-  background: none;
-  border: none;
-  color: var(--colour-sosy-green-500);
+  background: var(--colour-neutral-1100);
+  border: 1px solid var(--colour-neutral-1000);
+  color: var(--colour-neutral-500);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
   cursor: pointer;
-  text-decoration: underline;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.25s ease;
 
   &:hover {
-    color: var(--colour-sosy-green-700);
+    border-color: var(--colour-neutral-800);
+    background: var(--colour-neutral-1000);
+    color: var(--colour-neutral-100);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--colour-black-rgb), 0.2);
   }
 }
 

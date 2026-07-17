@@ -2,6 +2,7 @@
 
 .scheduler-page {
   min-height: 100vh;
+  padding-top: 4rem;
   padding-bottom: 4rem;
 
   &__container {
@@ -80,7 +81,7 @@
     height: 1.5rem;
     border-radius: 50%;
     background: var(--colour-neutral-400);
-    color: var(--colour-neutral-000);
+    color: var(--colour-neutral-1200);
     font-size: 0.75rem;
   }
 
