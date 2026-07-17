@@ -12,6 +12,7 @@ import {
   SchedulerPreferences,
 } from "@store/useSchedulerStore";
 import { generateSchedules } from "@utils/schedulerApi";
+import { solveWithCPSAT } from "@utils/cpSatSolver";
 import toast from "react-hot-toast";
 
 type Step = "transcript" | "preferences" | "results";
@@ -23,11 +24,17 @@ const SchedulerPage = () => {
     generatedSchedules,
     selectedSchedule,
     isGenerating,
+    isOptimizing,
+    optimizationStatus,
+    sectionsData,
     setCompletedCourses,
     setPreferences,
     setGeneratedSchedules,
     setSelectedSchedule,
     setIsGenerating,
+    setIsOptimizing,
+    setOptimizationStatus,
+    setSectionsData,
     setError,
   } = useSchedulerStore();
 
@@ -48,6 +55,7 @@ const SchedulerPage = () => {
       try {
         const result = await generateSchedules(prefs.desiredCourses, prefs);
         setGeneratedSchedules(result.schedules);
+        setSectionsData(result.sectionsData);
         if (result.schedules.length > 0) {
           setSelectedSchedule(result.schedules[0]);
         }
@@ -65,11 +73,46 @@ const SchedulerPage = () => {
     [
       setPreferences,
       setGeneratedSchedules,
+      setSectionsData,
       setSelectedSchedule,
       setIsGenerating,
       setError,
     ]
   );
+
+  const handleOptimize = useCallback(async () => {
+    if (!sectionsData || !useSchedulerStore.getState().preferences) return;
+
+    setIsOptimizing(true);
+    setOptimizationStatus("Loading OR-Tools...");
+
+    try {
+      const prefs = useSchedulerStore.getState().preferences!;
+      const optimized = await solveWithCPSAT(sectionsData, prefs, (message) =>
+        setOptimizationStatus(message)
+      );
+      if (optimized.length > 0) {
+        setGeneratedSchedules(optimized);
+        setSelectedSchedule(optimized[0]);
+        toast.success(`CP-SAT found ${optimized.length} optimized schedules`);
+      } else {
+        toast.error("CP-SAT found no feasible schedules");
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Optimization failed";
+      toast.error(message);
+    } finally {
+      setIsOptimizing(false);
+      setOptimizationStatus(null);
+    }
+  }, [
+    sectionsData,
+    setIsOptimizing,
+    setOptimizationStatus,
+    setGeneratedSchedules,
+    setSelectedSchedule,
+  ]);
 
   return (
     <div className="page scheduler-page">
@@ -116,6 +159,9 @@ const SchedulerPage = () => {
                 schedules={generatedSchedules}
                 onSelect={setSelectedSchedule}
                 onRefine={() => setStep("preferences")}
+                onOptimize={handleOptimize}
+                isOptimizing={isOptimizing}
+                optimizationStatus={optimizationStatus}
               />
             )}
           </div>
