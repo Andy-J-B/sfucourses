@@ -56,29 +56,6 @@ function hasConflict(a: ScheduleSlot, b: ScheduleSlot): boolean {
   );
 }
 
-function flattenSchedules(courses: CourseWithSectionDetails[]): ScheduleSlot[] {
-  const slots: ScheduleSlot[] = [];
-  for (const course of courses) {
-    for (const section of course.sections) {
-      for (const sched of section.schedules) {
-        if (!sched.startTime || !sched.endTime || !sched.days) continue;
-        const dayMinutes = getDayMinutes(sched);
-        for (const dm of dayMinutes) {
-          slots.push({
-            course,
-            section,
-            schedule: sched,
-            day: dm.day,
-            startTimeMinutes: dm.start,
-            endTimeMinutes: dm.end,
-          });
-        }
-      }
-    }
-  }
-  return slots;
-}
-
 function scoreSchedule(
   slots: ScheduleSlot[],
   preferences: SchedulerPreferences
@@ -184,9 +161,54 @@ function getSectionSlots(
   return slots;
 }
 
+function getSectionsConflict(a: SectionDetail[], b: SectionDetail[]): boolean {
+  const slotsA = a.flatMap((s) => {
+    const result: { day: string; start: number; end: number }[] = [];
+    for (const sched of s.schedules) {
+      if (!sched.startTime || !sched.endTime || !sched.days) continue;
+      for (const dm of getDayMinutes(sched)) {
+        result.push(dm);
+      }
+    }
+    return result;
+  });
+  const slotsB = b.flatMap((s) => {
+    const result: { day: string; start: number; end: number }[] = [];
+    for (const sched of s.schedules) {
+      if (!sched.startTime || !sched.endTime || !sched.days) continue;
+      for (const dm of getDayMinutes(sched)) {
+        result.push(dm);
+      }
+    }
+    return result;
+  });
+
+  for (const a of slotsA) {
+    for (const b of slotsB) {
+      if (a.day === b.day && a.start < b.end && b.start < a.end) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function groupSectionsByCode(
+  sections: SectionDetail[]
+): Map<string, SectionDetail[]> {
+  const groups = new Map<string, SectionDetail[]>();
+  for (const section of sections) {
+    const code = section.schedules[0]?.sectionCode || "OTHER";
+    if (!groups.has(code)) groups.set(code, []);
+    groups.get(code)!.push(section);
+  }
+  return groups;
+}
+
 function backtrack(
   courses: CourseWithSectionDetails[],
   currentIndex: number,
+  currentSections: SectionDetail[][],
   currentSlots: ScheduleSlot[],
   results: GeneratedSchedule[],
   preferences: SchedulerPreferences,
@@ -215,14 +237,12 @@ function backtrack(
     const { score, tags, reasoning } = scoreSchedule(currentSlots, preferences);
 
     const selectedCourses: CourseWithSectionDetails[] = [];
-    const seen = new Set<string>();
-    for (const slot of currentSlots) {
-      const key = slot.course.dept + slot.course.number + slot.section.section;
-      if (!seen.has(key)) {
-        seen.add(key);
+    for (let i = 0; i < courses.length; i++) {
+      const pickedSections = currentSections[i];
+      if (pickedSections && pickedSections.length > 0) {
         selectedCourses.push({
-          ...slot.course,
-          sections: [slot.section],
+          ...courses[i],
+          sections: pickedSections,
         });
       }
     }
@@ -247,50 +267,71 @@ function backtrack(
   }
 
   const course = courses[currentIndex];
+  const groups = groupSectionsByCode(course.sections);
+  const groupEntries = Array.from(groups.entries());
 
-  for (const section of course.sections) {
-    const sectionSlots = getSectionSlots(course, section);
+  function pickGroup(groupIndex: number, picked: SectionDetail[]): void {
+    if (results.length >= maxResults) return;
 
-    let hasConflictFlag = false;
-    for (const newSlot of sectionSlots) {
-      for (const existingSlot of currentSlots) {
-        if (hasConflict(newSlot, existingSlot)) {
-          hasConflictFlag = true;
-          break;
+    if (groupIndex === groupEntries.length) {
+      const sectionSlots = picked.flatMap((s) => getSectionSlots(course, s));
+
+      if (sectionSlots.length === 0) return;
+
+      let hasConflictFlag = false;
+      for (const newSlot of sectionSlots) {
+        for (const existingSlot of currentSlots) {
+          if (hasConflict(newSlot, existingSlot)) {
+            hasConflictFlag = true;
+            break;
+          }
         }
+        if (hasConflictFlag) break;
       }
-      if (hasConflictFlag) break;
-    }
+      if (hasConflictFlag) return;
 
-    if (hasConflictFlag) continue;
+      if (preferences.avoidDays.length > 0) {
+        const sectionDays = sectionSlots.map((s) => s.day);
+        const hasAvoidedDay = sectionDays.some((d) =>
+          preferences.avoidDays.includes(d)
+        );
+        if (hasAvoidedDay) return;
+      }
 
-    if (preferences.avoidDays.length > 0) {
-      const sectionDays = sectionSlots.map((s) => s.day);
-      const hasAvoidedDay = sectionDays.some((d) =>
-        preferences.avoidDays.includes(d)
+      if (preferences.campusPreferences.length > 0) {
+        const campuses = picked.flatMap((s) =>
+          s.schedules.map((sc) => sc.campus)
+        );
+        const hasPreferredCampus = campuses.some((c) =>
+          preferences.campusPreferences.some((p) =>
+            c.toLowerCase().includes(p.toLowerCase())
+          )
+        );
+        if (!hasPreferredCampus && campuses.length > 0) return;
+      }
+
+      const newSections = [...currentSections];
+      newSections[currentIndex] = picked;
+
+      backtrack(
+        courses,
+        currentIndex + 1,
+        newSections,
+        [...currentSlots, ...sectionSlots],
+        results,
+        preferences,
+        maxResults
       );
-      if (hasAvoidedDay) continue;
+      return;
     }
 
-    if (preferences.campusPreferences.length > 0) {
-      const campuses = section.schedules.map((s) => s.campus);
-      const hasPreferredCampus = campuses.some((c) =>
-        preferences.campusPreferences.some((p) =>
-          c.toLowerCase().includes(p.toLowerCase())
-        )
-      );
-      if (!hasPreferredCampus && section.schedules.length > 0) continue;
+    const [, groupSections] = groupEntries[groupIndex];
+    for (const section of groupSections) {
+      pickGroup(groupIndex + 1, [...picked, section]);
     }
-
-    backtrack(
-      courses,
-      currentIndex + 1,
-      [...currentSlots, ...sectionSlots],
-      results,
-      preferences,
-      maxResults
-    );
   }
+
+  pickGroup(0, []);
 }
 
 export function generateSchedules(
@@ -300,7 +341,7 @@ export function generateSchedules(
   const results: GeneratedSchedule[] = [];
   const maxResults = 5;
 
-  backtrack(courses, 0, [], results, preferences, maxResults);
+  backtrack(courses, 0, [], [], results, preferences, maxResults);
 
   results.sort((a, b) => b.qualityScore - a.qualityScore);
 
