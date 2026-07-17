@@ -18,7 +18,10 @@ export default async function handler(
     const data = await fetchWithCache(targetUrl);
     res.status(200).json(data);
   } catch (error: any) {
-    console.error("Proxy error:", error);
-    res.status(500).json({ error: error.message || "Internal server error" });
+    const msg = error.message || "Internal server error";
+    const statusMatch = msg.match(/error:\s*(\d{3})/);
+    const status = statusMatch ? parseInt(statusMatch[1]) : 502;
+    console.error(`Proxy error ${status}:`, msg);
+    res.status(status).json({ error: msg });
   }
 }
