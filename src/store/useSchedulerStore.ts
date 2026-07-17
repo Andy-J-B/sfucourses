@@ -38,6 +38,9 @@ interface SchedulerState {
   generatedSchedules: GeneratedSchedule[];
   selectedSchedule: GeneratedSchedule | null;
   isGenerating: boolean;
+  isOptimizing: boolean;
+  optimizationStatus: string | null;
+  sectionsData: any[] | null;
   error: string | null;
 
   setCompletedCourses: (courses: CompletedCourse[]) => void;
@@ -45,6 +48,9 @@ interface SchedulerState {
   setGeneratedSchedules: (schedules: GeneratedSchedule[]) => void;
   setSelectedSchedule: (schedule: GeneratedSchedule | null) => void;
   setIsGenerating: (loading: boolean) => void;
+  setIsOptimizing: (optimizing: boolean) => void;
+  setOptimizationStatus: (status: string | null) => void;
+  setSectionsData: (data: any[] | null) => void;
   setError: (error: string | null) => void;
   reset: () => void;
 }
@@ -55,6 +61,9 @@ const initialState = {
   generatedSchedules: [],
   selectedSchedule: null,
   isGenerating: false,
+  isOptimizing: false,
+  optimizationStatus: null,
+  sectionsData: null,
   error: null,
 };
 
@@ -69,6 +78,9 @@ export const useSchedulerStore = create<SchedulerState>()(
         set({ generatedSchedules: schedules }),
       setSelectedSchedule: (schedule) => set({ selectedSchedule: schedule }),
       setIsGenerating: (loading) => set({ isGenerating: loading }),
+      setIsOptimizing: (optimizing) => set({ isOptimizing: optimizing }),
+      setOptimizationStatus: (status) => set({ optimizationStatus: status }),
+      setSectionsData: (data) => set({ sectionsData: data }),
       setError: (error) => set({ error }),
       reset: () => set(initialState),
     }),
