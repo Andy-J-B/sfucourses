@@ -39,195 +39,163 @@ courses = json.loads(courses_json)
 prefs = json.loads(prefs_json)
 max_results = max_results
 
-model = cp_model.CpModel()
+def parse_time(t):
+    h, m = map(int, t.split(":"))
+    return h * 60 + m
 
-# --- Decision variables ---
-x = {}  # x[(ci, si)] = BoolVar
+def sched_minutes(s):
+    if not s.get("startTime") or not s.get("endTime") or not s.get("days"):
+        return None
+    days = [d.strip() for d in s["days"].split(",")]
+    start = parse_time(s["startTime"])
+    end = parse_time(s["endTime"])
+    return [(d, start, end) for d in days]
+
+# Group sections by sectionCode for each course
+# course_groups[ci] = { code: [si, ...], ... }
+course_groups = []
+for ci, course in enumerate(courses):
+    groups = {}
+    for si, section in enumerate(course["sections"]):
+        code = "OTHER"
+        if section.get("schedules"):
+            code = section["schedules"][0].get("sectionCode", "OTHER")
+        if code not in groups:
+            groups[code] = []
+        groups[code].append(si)
+    course_groups.append(groups)
+
+# Decision variables: x[(ci, si)] = BoolVar
+model = cp_model.CpModel()
+x = {}
 for ci, course in enumerate(courses):
     for si in range(len(course["sections"])):
         x[(ci, si)] = model.NewBoolVar(f"x_{ci}_{si}")
 
-# --- Hard constraints ---
+# Hard: exactly one section per section-type group per course
+for ci, groups in enumerate(course_groups):
+    for code, sis in groups.items():
+        model.Add(sum(x[(ci, si)] for si in sis) == 1)
 
-# Exactly one section per course
-for ci, course in enumerate(courses):
-    model.Add(sum(x[(ci, si)] for si in range(len(course["sections"]))) == 1)
-
-# No time conflicts between sections
+# Hard: no time conflicts between sections of DIFFERENT courses
 for ci1 in range(len(courses)):
     for si1 in range(len(courses[ci1]["sections"])):
+        m1_all = []
+        for sched in courses[ci1]["sections"][si1].get("schedules", []):
+            ms = sched_minutes(sched)
+            if ms:
+                m1_all.extend(ms)
+        if not m1_all:
+            continue
         for ci2 in range(ci1 + 1, len(courses)):
             for si2 in range(len(courses[ci2]["sections"])):
-                s1 = courses[ci1]["sections"][si1]
-                s2 = courses[ci2]["sections"][si2]
-                for sched1 in s1.get("schedules", []):
-                    if not sched1.get("startTime") or not sched1.get("endTime") or not sched1.get("days"):
-                        continue
-                    days1 = [d.strip() for d in sched1["days"].split(",")]
-                    for sched2 in s2.get("schedules", []):
-                        if not sched2.get("startTime") or not sched2.get("endTime") or not sched2.get("days"):
-                            continue
-                        days2 = [d.strip() for d in sched2["days"].split(",")]
-                        common = set(days1) & set(days2)
-                        if not common:
-                            continue
-                        h1, m1 = map(int, sched1["startTime"].split(":"))
-                        s1min = h1 * 60 + m1
-                        h2, m2 = map(int, sched1["endTime"].split(":"))
-                        e1min = h2 * 60 + m2
-                        h3, m3 = map(int, sched2["startTime"].split(":"))
-                        s2min = h3 * 60 + m3
-                        h4, m4 = map(int, sched2["endTime"].split(":"))
-                        e2min = h4 * 60 + m4
-                        if s1min < e2min and s2min < e1min:
+                m2_all = []
+                for sched in courses[ci2]["sections"][si2].get("schedules", []):
+                    ms = sched_minutes(sched)
+                    if ms:
+                        m2_all.extend(ms)
+                if not m2_all:
+                    continue
+                for (d1, s1, e1) in m1_all:
+                    for (d2, s2, e2) in m2_all:
+                        if d1 == d2 and s1 < e2 and s2 < e1:
                             model.Add(x[(ci1, si1)] + x[(ci2, si2)] <= 1)
 
-# Max courses
-num_courses = len(courses)
-if num_courses > prefs.get("maxCourses", 10):
-    model.Add(sum(x[(ci, si)] for ci in range(len(courses))
-                  for si in range(len(courses[ci]["sections"]))) <= prefs.get("maxCourses", 10))
+# Hard: no conflicts between sections within the SAME course
+for ci, groups in enumerate(course_groups):
+    for code, sis in groups.items():
+        for i in range(len(sis)):
+            for j in range(i + 1, len(sis)):
+                si_a, si_b = sis[i], sis[j]
+                m_a = []
+                for sched in courses[ci]["sections"][si_a].get("schedules", []):
+                    ms = sched_minutes(sched)
+                    if ms:
+                        m_a.extend(ms)
+                m_b = []
+                for sched in courses[ci]["sections"][si_b].get("schedules", []):
+                    ms = sched_minutes(sched)
+                    if ms:
+                        m_b.extend(ms)
+                for (d1, s1, e1) in m_a:
+                    for (d2, s2, e2) in m_b:
+                        if d1 == d2 and s1 < e2 and s2 < e1:
+                            model.Add(x[(ci, si_a)] + x[(ci, si_b)] <= 1)
 
-# Avoided days (hard filter)
+# Hard: avoided days
 avoided = set(prefs.get("avoidDays", []))
 if avoided:
     for ci, course in enumerate(courses):
         for si in range(len(course["sections"])):
-            section = course["sections"][si]
             section_days = set()
-            for sched in section.get("schedules", []):
+            for sched in course["sections"][si].get("schedules", []):
                 if sched.get("days"):
                     for d in sched["days"].split(","):
                         section_days.add(d.strip())
             if section_days & avoided:
                 model.Add(x[(ci, si)] == 0)
 
-# Campus preference (hard filter)
+# Hard: campus preference
 campus_prefs = [p.lower() for p in prefs.get("campusPreferences", [])]
 if campus_prefs:
     for ci, course in enumerate(courses):
         for si in range(len(course["sections"])):
-            section = course["sections"][si]
-            campuses = [s.get("campus", "").lower() for s in section.get("schedules", [])]
+            campuses = [s.get("campus", "").lower() for s in course["sections"][si].get("schedules", [])]
             if campuses and not any(any(p in c for p in campus_prefs) for c in campuses):
                 model.Add(x[(ci, si)] == 0)
 
-# --- Soft objectives (maximize) ---
-
-obj_terms = []
-
-# Time preference bonus: +10 per class within preferred window
-if prefs.get("preferredTimeStart") and prefs.get("preferredTimeEnd"):
-    ph, pm = map(int, prefs["preferredTimeStart"].split(":"))
-    pref_start = ph * 60 + pm
-    qh, qm = map(int, prefs["preferredTimeEnd"].split(":"))
-    pref_end = qh * 60 + qm
-    for ci, course in enumerate(courses):
-        for si in range(len(course["sections"])):
-            section = course["sections"][si]
-            good = True
-            for sched in section.get("schedules", []):
-                if not sched.get("startTime"):
-                    continue
-                h, m = map(int, sched["startTime"].split(":"))
-                t = h * 60 + m
-                if t < pref_start or t > pref_end:
-                    good = False
-                    break
-            if good:
-                obj_terms.append(10 * x[(ci, si)])
-
-# Single campus bonus: +8 if only one campus used
-all_campuses = set()
-for course in courses:
-    for section in course["sections"]:
-        for sched in section.get("schedules", []):
-            if sched.get("campus"):
-                all_campuses.add(sched["campus"])
-
-campus_vars = {}
-for ci, course in enumerate(courses):
-    for si in range(len(course["sections"])):
-        section = course["sections"][si]
-        campuses = set()
-        for sched in section.get("schedules", []):
-            if sched.get("campus"):
-                campuses.add(sched["campus"])
-        campus_vars[(ci, si)] = campuses
-
-if len(all_campuses) > 1:
-    for campus in all_campuses:
-        c_used = model.NewBoolVar(f"campus_used_{campus}")
-        using = []
-        for ci in range(len(courses)):
-            for si in range(len(courses[ci]["sections"])):
-                if campus in campus_vars.get((ci, si), set()):
-                    using.append(x[(ci, si)])
-        if using:
-            model.AddMaxEquality(c_used, using)
-            obj_terms.append(8 * c_used)
-
-# Prefer fewer active days: +5 per day NOT used
-all_days = {"Mo", "Tu", "We", "Th", "Fr"}
-day_used = {}
-for day in all_days:
-    day_used[day] = model.NewBoolVar(f"day_used_{day}")
-    day_vars = []
-    for ci, course in enumerate(courses):
-        for si in range(len(course["sections"])):
-            section = course["sections"][si]
-            for sched in section.get("schedules", []):
-                if sched.get("days") and day in sched["days"]:
-                    day_vars.append(x[(ci, si)])
-                    break
-    if day_vars:
-        model.AddMaxEquality(day_used[day], day_vars)
-        obj_terms.append(5 * day_used[day])
-
-# Balance bonus: +3 per active day pair with similar hours
-active_days = list(all_days)
-for i in range(len(active_days)):
-    for j in range(i + 1, len(active_days)):
-        d1, d2 = active_days[i], active_days[j]
-        h1 = model.NewIntVar(0, 720, f"hours_{d1}")
-        h2 = model.NewIntVar(0, 720, f"hours_{d2}")
-        h1_terms = []
-        h2_terms = []
-        for ci, course in enumerate(courses):
-            for si in range(len(course["sections"])):
-                section = course["sections"][si]
-                for sched in section.get("schedules", []):
-                    if not sched.get("startTime") or not sched.get("endTime") or not sched.get("days"):
-                        continue
-                    days_list = [d.strip() for d in sched["days"].split(",")]
-                    h_s, m_s = map(int, sched["startTime"].split(":"))
-                    h_e, m_e = map(int, sched["endTime"].split(":"))
-                    dur = (h_e * 60 + m_e) - (h_s * 60 + m_s)
-                    if d1 in days_list:
-                        h1_terms.append(dur * x[(ci, si)])
-                    if d2 in days_list:
-                        h2_terms.append(dur * x[(ci, si)])
-        if h1_terms:
-            model.Add(h1 == sum(h1_terms))
-        if h2_terms:
-            model.Add(h2 == sum(h2_terms))
-
-# Min credits constraint
+# Hard: min credits
 min_credits = prefs.get("minCredits", 0)
 if min_credits > 0:
     credit_terms = []
     for ci, course in enumerate(courses):
         units = int(float(course.get("units", 3)))
+        # Count each course once (sum of group selections = 1 per course)
         credit_terms.append(units * sum(x[(ci, si)] for si in range(len(course["sections"]))))
     model.Add(sum(credit_terms) >= min_credits)
 
-# Max credits constraint
+# Hard: max credits
 max_credits = prefs.get("maxCredits", 100)
 credit_terms = []
 for ci, course in enumerate(courses):
     units = int(float(course.get("units", 3)))
     credit_terms.append(units * sum(x[(ci, si)] for si in range(len(course["sections"]))))
 model.Add(sum(credit_terms) <= max_credits)
+
+# Soft: time preference bonus
+obj_terms = []
+if prefs.get("preferredTimeStart") and prefs.get("preferredTimeEnd"):
+    pref_start = parse_time(prefs["preferredTimeStart"])
+    pref_end = parse_time(prefs["preferredTimeEnd"])
+    for ci, course in enumerate(courses):
+        for si in range(len(course["sections"])):
+            section = course["sections"][si]
+            all_good = True
+            for sched in section.get("schedules", []):
+                if not sched.get("startTime"):
+                    continue
+                t = parse_time(sched["startTime"])
+                if t < pref_start or t > pref_end:
+                    all_good = False
+                    break
+            if all_good:
+                obj_terms.append(10 * x[(ci, si)])
+
+# Soft: prefer fewer active days (+5 per day NOT used)
+all_days_set = {"Mo", "Tu", "We", "Th", "Fr"}
+day_used = {}
+for day in all_days_set:
+    day_used[day] = model.NewBoolVar(f"day_used_{day}")
+    day_vars = []
+    for ci, course in enumerate(courses):
+        for si in range(len(course["sections"])):
+            for sched in course["sections"][si].get("schedules", []):
+                if sched.get("days") and day in sched["days"]:
+                    day_vars.append(x[(ci, si)])
+                    break
+    if day_vars:
+        model.AddMaxEquality(day_used[day], day_vars)
+        obj_terms.append(5 * day_used[day])
 
 # --- Solve ---
 if obj_terms:

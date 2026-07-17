@@ -34,7 +34,7 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
   const [desiredCourses, setDesiredCourses] = useState<string[]>([""]);
   const [term, setTerm] = useState(() => getCurrentAndNextTerm()[0]);
   const [maxCredits, setMaxCredits] = useState(15);
-  const [minCredits, setMinCredits] = useState(9);
+  const [minCredits, setMinCredits] = useState(3);
   const [preferredTimeStart, setPreferredTimeStart] = useState("09:00");
   const [preferredTimeEnd, setPreferredTimeEnd] = useState("18:00");
   const [avoidDays, setAvoidDays] = useState<string[]>([]);
