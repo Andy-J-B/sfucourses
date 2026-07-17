@@ -22,8 +22,8 @@
       border: 1px solid var(--colour-neutral-300);
       border-radius: $border-radius;
       max-width: 10rem;
-      background: var(--colour-neutral-000);
-      color: var(--colour-neutral-900);
+      background: var(--colour-neutral-1200);
+      color: var(--colour-neutral-000);
 
       &:focus {
         outline: none;
@@ -51,6 +51,24 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid var(--colour-neutral-300);
+      border-radius: $border-radius;
+      background: var(--colour-neutral-1200);
+      color: var(--colour-neutral-000);
+
+      &::placeholder {
+        color: var(--colour-neutral-600);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: var(--colour-sosy-green-500);
+      }
+    }
   }
 
   &__remove-btn {
@@ -107,7 +125,8 @@
 .term-btn {
   padding: 0.75rem 1.5rem;
   border: 1px solid var(--colour-neutral-300);
-  background: var(--colour-neutral-000);
+  background: var(--colour-neutral-1200);
+  color: var(--colour-neutral-000);
   border-radius: $border-radius;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -127,7 +146,8 @@
 .campus-btn {
   padding: 0.5rem 1rem;
   border: 1px solid var(--colour-neutral-300);
-  background: var(--colour-neutral-000);
+  background: var(--colour-neutral-1200);
+  color: var(--colour-neutral-000);
   border-radius: $border-radius;
   cursor: pointer;
   transition: all 0.2s ease;
