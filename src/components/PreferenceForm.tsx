@@ -9,6 +9,7 @@ interface SchedulerPreferences {
   desiredCourses: string[];
   maxCourses: number;
   maxCredits: number;
+  minCredits: number;
   preferredTimeStart: string;
   preferredTimeEnd: string;
   avoidDays: string[];
@@ -33,6 +34,7 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
   const [desiredCourses, setDesiredCourses] = useState<string[]>([""]);
   const [term, setTerm] = useState(() => getCurrentAndNextTerm()[0]);
   const [maxCredits, setMaxCredits] = useState(15);
+  const [minCredits, setMinCredits] = useState(9);
   const [preferredTimeStart, setPreferredTimeStart] = useState("09:00");
   const [preferredTimeEnd, setPreferredTimeEnd] = useState("18:00");
   const [avoidDays, setAvoidDays] = useState<string[]>([]);
@@ -90,6 +92,7 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
       desiredCourses: validCourses,
       maxCourses: 5,
       maxCredits,
+      minCredits,
       preferredTimeStart,
       preferredTimeEnd,
       avoidDays,
@@ -178,6 +181,17 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
               max={18}
               value={maxCredits}
               onChange={(e) => setMaxCredits(Number(e.target.value))}
+            />
+          </div>
+
+          <div className="preference-form__field">
+            <label>Min Credits per Term</label>
+            <input
+              type="number"
+              min={3}
+              max={18}
+              value={minCredits}
+              onChange={(e) => setMinCredits(Number(e.target.value))}
             />
           </div>
 

@@ -1,4 +1,5 @@
 import { CourseWithSectionDetails } from "@types";
+import { toTermCode } from "@utils/format";
 import {
   parseTranscriptText,
   parseTextTranscript,
@@ -57,6 +58,8 @@ export async function generateSchedules(
 ): Promise<GenerateScheduleResponse> {
   const startTime = performance.now();
 
+  const termCode = toTermCode(preferences.term);
+
   const sectionsPromises = desiredCourses.map(async (courseCode) => {
     const [dept, number] = courseCode.split(" ");
     if (!dept || !number) return null;
@@ -64,7 +67,7 @@ export async function generateSchedules(
       const data = await import("./index").then((mod) =>
         mod.getCourseAPIData(
           `/sections?term=${encodeURIComponent(
-            preferences.term
+            termCode
           )}&dept=${encodeURIComponent(dept)}&number=${encodeURIComponent(
             number
           )}`
