@@ -77,12 +77,18 @@ export async function generateSchedules(
     }
   });
 
-  const sectionsData = (await Promise.all(sectionsPromises)).filter(
-    Boolean
-  ) as CourseWithSectionDetails[];
+  const results = await Promise.all(sectionsPromises);
+  const sectionsData = results.filter(Boolean) as CourseWithSectionDetails[];
+  const failed = desiredCourses.filter((_, i) => !results[i]);
 
   if (sectionsData.length === 0) {
-    throw new Error("No sections found for the specified courses");
+    throw new Error(
+      failed.length > 0
+        ? `No sections found for: ${failed.join(
+            ", "
+          )}. These courses may not be offered in ${preferences.term}.`
+        : "No sections found for the specified courses"
+    );
   }
 
   const schedules = generateSchedulesLocal(sectionsData, preferences);
