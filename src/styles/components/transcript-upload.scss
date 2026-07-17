@@ -105,7 +105,7 @@
   &__table-wrapper {
     overflow-x: auto;
     margin-bottom: 1rem;
-    border: 1px solid var(--colour-neutral-200);
+    border: 1px solid var(--colour-neutral-1000);
     border-radius: $border-radius;
   }
 
@@ -117,16 +117,17 @@
     td {
       padding: 0.75rem;
       text-align: left;
-      border-bottom: 1px solid var(--colour-neutral-200);
+      border-bottom: 1px solid var(--colour-neutral-1000);
+      color: var(--colour-neutral-000);
     }
 
     th {
       font-weight: 600;
-      background: var(--colour-neutral-100);
+      background: var(--colour-neutral-1100);
     }
 
     td {
-      background: var(--colour-neutral-000);
+      background: var(--colour-neutral-1200);
     }
   }
 

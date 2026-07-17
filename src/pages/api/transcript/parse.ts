@@ -16,7 +16,13 @@ export default async function handler(
   try {
     const form = formidable({
       maxFileSize: 10 * 1024 * 1024,
-      filter: ({ mimetype }) => mimetype === "application/pdf",
+      filter: ({ mimetype }) => {
+        return (
+          mimetype === "application/pdf" ||
+          mimetype === "application/x-pdf" ||
+          !!mimetype?.includes("pdf")
+        );
+      },
     });
 
     const [fields, files] = await form.parse(req);
