@@ -20,6 +20,7 @@ interface ParseTranscriptResponse {
 interface GenerateScheduleResponse {
   schedules: ReturnType<typeof generateSchedulesLocal>;
   total: number;
+  sectionsData: CourseWithSectionDetails[];
   timing: {
     total_ms: number;
   };
@@ -101,6 +102,7 @@ export async function generateSchedules(
   return {
     schedules,
     total: schedules.length,
+    sectionsData,
     timing: {
       total_ms: Math.round(elapsed),
     },
