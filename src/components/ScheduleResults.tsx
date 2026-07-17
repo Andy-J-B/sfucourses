@@ -17,12 +17,18 @@ interface ScheduleResultsProps {
   schedules: GeneratedSchedule[];
   onSelect: (schedule: GeneratedSchedule) => void;
   onRefine: () => void;
+  onOptimize?: () => void;
+  isOptimizing?: boolean;
+  optimizationStatus?: string | null;
 }
 
 export const ScheduleResults: React.FC<ScheduleResultsProps> = ({
   schedules,
   onSelect,
   onRefine,
+  onOptimize,
+  isOptimizing,
+  optimizationStatus,
 }) => {
   if (schedules.length === 0) {
     return (
@@ -93,11 +99,26 @@ export const ScheduleResults: React.FC<ScheduleResultsProps> = ({
       </div>
 
       <div className="schedule-results__footer">
-        <Button
-          label="Refine Preferences"
-          type="secondary"
-          onClick={onRefine}
-        />
+        {isOptimizing && (
+          <div className="schedule-results__optimizing">
+            <div className="schedule-results__spinner" />
+            <span>{optimizationStatus || "Optimizing..."}</span>
+          </div>
+        )}
+        <div className="schedule-results__footer-buttons">
+          {onOptimize && !isOptimizing && (
+            <Button
+              label="Optimize with CP-SAT"
+              onClick={onOptimize}
+              disabled={isOptimizing}
+            />
+          )}
+          <Button
+            label="Refine Preferences"
+            type="secondary"
+            onClick={onRefine}
+          />
+        </div>
       </div>
     </div>
   );
