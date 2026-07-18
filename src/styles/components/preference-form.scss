@@ -120,6 +120,13 @@
     justify-content: flex-end;
     margin-top: 1rem;
   }
+
+  &__major-hint {
+    font-weight: 400;
+    font-size: 0.8rem;
+    color: var(--colour-sosy-green-500);
+    margin-left: 0.5rem;
+  }
 }
 
 .term-btn {

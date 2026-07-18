@@ -60,6 +60,8 @@ export async function generateSchedules(
   const startTime = performance.now();
 
   const termCode = toTermCode(preferences.term);
+  console.log("[Scheduler] term:", preferences.term, "-> termCode:", termCode);
+  console.log("[Scheduler] desiredCourses:", desiredCourses);
 
   const sectionsPromises = desiredCourses.map(async (courseCode) => {
     const [dept, number] = courseCode.split(" ");
@@ -74,7 +76,18 @@ export async function generateSchedules(
           )}`
         )
       );
-      return data?.[0] || null;
+      const course = data?.[0] || null;
+      if (course) {
+        console.log(
+          `[Scheduler] ${courseCode}: ${course.sections.length} sections`,
+          course.sections
+            .map((s: any) => `${s.section}(${s.schedules?.[0]?.sectionCode})`)
+            .join(", ")
+        );
+      } else {
+        console.warn(`[Scheduler] ${courseCode}: no data returned`);
+      }
+      return course;
     } catch (error) {
       console.error(`Failed to fetch sections for ${courseCode}:`, error);
       return null;
@@ -84,6 +97,14 @@ export async function generateSchedules(
   const results = await Promise.all(sectionsPromises);
   const sectionsData = results.filter(Boolean) as CourseWithSectionDetails[];
   const failed = desiredCourses.filter((_, i) => !results[i]);
+
+  console.log(
+    "[Scheduler] sectionsData count:",
+    sectionsData.length,
+    "failed:",
+    failed
+  );
+  console.log("[Scheduler] preferences:", JSON.stringify(preferences, null, 2));
 
   if (sectionsData.length === 0) {
     throw new Error(
@@ -96,6 +117,7 @@ export async function generateSchedules(
   }
 
   const schedules = generateSchedulesLocal(sectionsData, preferences);
+  console.log("[Scheduler] generated schedules:", schedules.length);
 
   const elapsed = performance.now() - startTime;
 

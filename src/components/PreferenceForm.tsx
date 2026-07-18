@@ -3,6 +3,7 @@ import { getCurrentAndNextTerm, getCourseAPIData } from "@utils/index";
 import { CourseCombobox, OutlineOption } from "./CourseCombobox";
 import Button from "./Button";
 import toast from "react-hot-toast";
+import { useSchedulerStore, CompletedCourse } from "@store/useSchedulerStore";
 
 interface SchedulerPreferences {
   term: string;
@@ -25,11 +26,36 @@ interface PreferenceFormProps {
 const DAYS = ["Mo", "Tu", "We", "Th", "Fr"];
 const CAMPUSES = ["Burnaby", "Surrey", "Vancouver"];
 
+function detectMajors(courses: CompletedCourse[]): string[] {
+  const deptCounts: Record<string, number> = {};
+  for (const course of courses) {
+    const dept = course.code.split(" ")[0]?.toUpperCase();
+    if (dept) deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+  }
+  return Object.entries(deptCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([dept]) => dept);
+}
+
+function detectLevel(courses: CompletedCourse[], major: string): number {
+  const levelCounts: Record<number, number> = {};
+  for (const course of courses) {
+    const parts = course.code.toUpperCase().split(" ");
+    if (parts[0] !== major) continue;
+    const num = parseInt(parts[1]) || 0;
+    const level = Math.floor(num / 100) * 100;
+    if (level > 0) levelCounts[level] = (levelCounts[level] || 0) + 1;
+  }
+  const sorted = Object.entries(levelCounts).sort((a, b) => b[1] - a[1]);
+  return sorted.length > 0 ? parseInt(sorted[0][0]) : 100;
+}
+
 export const PreferenceForm: React.FC<PreferenceFormProps> = ({
   onComplete,
   onBack,
   isGenerating,
 }) => {
+  const completedCourses = useSchedulerStore((s) => s.completedCourses);
   const [subStep, setSubStep] = useState<1 | 2>(1);
   const [desiredCourses, setDesiredCourses] = useState<string[]>([""]);
   const [term, setTerm] = useState(() => getCurrentAndNextTerm()[0]);
@@ -42,6 +68,8 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
     "Burnaby",
   ]);
   const [outlineOptions, setOutlineOptions] = useState<OutlineOption[]>([]);
+  const [detectedMajor, setDetectedMajor] = useState<string | null>(null);
+  const [suggestionsApplied, setSuggestionsApplied] = useState(false);
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -63,6 +91,53 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
     };
     fetchOptions();
   }, []);
+
+  useEffect(() => {
+    if (
+      outlineOptions.length === 0 ||
+      completedCourses.length === 0 ||
+      suggestionsApplied
+    )
+      return;
+
+    const majors = detectMajors(completedCourses);
+    if (majors.length === 0) return;
+
+    const primaryMajor = majors[0];
+    setDetectedMajor(primaryMajor);
+
+    const level = detectLevel(completedCourses, primaryMajor);
+    const maxLevel = Math.min(level + 100, 400);
+
+    const completed = new Set(
+      completedCourses.map((c) => c.code.toUpperCase().replace(/\s+/g, " "))
+    );
+
+    const suggestions = outlineOptions
+      .filter((o) => o.dept.toUpperCase() === primaryMajor)
+      .filter((o) => {
+        const num = parseInt(o.number) || 0;
+        const courseLevel = Math.floor(num / 100) * 100;
+        return courseLevel >= level && courseLevel <= maxLevel;
+      })
+      .filter((o) => !completed.has(`${o.dept.toUpperCase()} ${o.number}`))
+      .sort((a, b) => {
+        const numA = parseInt(a.number) || 0;
+        const numB = parseInt(b.number) || 0;
+        return numA - numB;
+      })
+      .map((o) => `${o.dept.toUpperCase()} ${o.number}`)
+      .slice(0, 5);
+
+    if (suggestions.length > 0) {
+      setDesiredCourses(suggestions);
+      setSuggestionsApplied(true);
+      toast(
+        `Suggested ${suggestions.length} ${primaryMajor} ${level}+ courses based on your transcript`,
+        { icon: "🎓" }
+      );
+    }
+  }, [outlineOptions, completedCourses, suggestionsApplied]);
 
   const addCourseSlot = () => {
     if (desiredCourses.length < 6) {
@@ -124,7 +199,14 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
           </div>
 
           <div className="preference-form__field">
-            <label>What courses do you want to take?</label>
+            <label>
+              What courses do you want to take?
+              {detectedMajor && (
+                <span className="preference-form__major-hint">
+                  Detected major: {detectedMajor}
+                </span>
+              )}
+            </label>
             <div className="preference-form__courses">
               {desiredCourses.map((course, i) => (
                 <div key={i} className="preference-form__course-row">
