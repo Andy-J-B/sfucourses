@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { getCurrentAndNextTerm, getCourseAPIData } from "@utils/index";
+import { toTermCode } from "@utils/format";
 import { CourseCombobox, OutlineOption } from "./CourseCombobox";
 import Button from "./Button";
 import toast from "react-hot-toast";
@@ -100,7 +101,8 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
     if (detected) setMajor(detected);
   }, [completedCourses, major]);
 
-  // Suggest anchor courses from the detected major + level once options load.
+  // Suggest anchor courses from the detected major + level, restricted to
+  // courses actually offered in the selected term (checked against /sections).
   useEffect(() => {
     if (
       outlineOptions.length === 0 ||
@@ -112,34 +114,61 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
     const primaryMajor = major || detectMajors(completedCourses)[0];
     if (!primaryMajor) return;
 
-    const level = detectLevel(completedCourses, primaryMajor);
-    const maxLevel = Math.min(level + 100, 400);
+    let cancelled = false;
+    (async () => {
+      // Which of this major's courses have sections this term?
+      let offered = new Set<string>();
+      try {
+        const data = await getCourseAPIData(
+          `/sections?term=${toTermCode(term)}&dept=${primaryMajor}`
+        );
+        if (Array.isArray(data)) {
+          offered = new Set(
+            data.map((c: any) => `${(c.dept || "").toUpperCase()} ${c.number}`)
+          );
+        }
+      } catch {
+        // If we can't confirm offerings, suggest nothing rather than risk
+        // recommending a course that isn't offered this term.
+      }
+      if (cancelled || offered.size === 0) return;
 
-    const completed = new Set(
-      completedCourses.map((c) => c.code.toUpperCase().replace(/\s+/g, " "))
-    );
-
-    const suggestions = outlineOptions
-      .filter((o) => o.dept.toUpperCase() === primaryMajor)
-      .filter((o) => {
-        const num = parseInt(o.number) || 0;
-        const courseLevel = Math.floor(num / 100) * 100;
-        return courseLevel >= level && courseLevel <= maxLevel;
-      })
-      .filter((o) => !completed.has(`${o.dept.toUpperCase()} ${o.number}`))
-      .sort((a, b) => (parseInt(a.number) || 0) - (parseInt(b.number) || 0))
-      .map((o) => `${o.dept.toUpperCase()} ${o.number}`)
-      .slice(0, MAX_ANCHORS);
-
-    if (suggestions.length > 0) {
-      setDesiredCourses(suggestions);
-      setSuggestionsApplied(true);
-      toast(
-        `Suggested ${suggestions.length} ${primaryMajor} ${level}+ courses based on your transcript`,
-        { icon: "🎓" }
+      const level = detectLevel(completedCourses, primaryMajor);
+      const maxLevel = Math.min(level + 100, 400);
+      const completed = new Set(
+        completedCourses.map((c) => c.code.toUpperCase().replace(/\s+/g, " "))
       );
-    }
-  }, [outlineOptions, completedCourses, suggestionsApplied, major]);
+
+      const suggestions = outlineOptions
+        .filter((o) => o.dept.toUpperCase() === primaryMajor)
+        .filter((o) => {
+          const num = parseInt(o.number) || 0;
+          const courseLevel = Math.floor(num / 100) * 100;
+          return courseLevel >= level && courseLevel <= maxLevel;
+        })
+        .map((o) => `${o.dept.toUpperCase()} ${o.number}`)
+        .filter((code) => !completed.has(code))
+        .filter((code) => offered.has(code))
+        .sort(
+          (a, b) =>
+            (parseInt(a.split(" ")[1]) || 0) - (parseInt(b.split(" ")[1]) || 0)
+        )
+        .slice(0, MAX_ANCHORS);
+
+      if (suggestions.length > 0 && !cancelled) {
+        setDesiredCourses(suggestions);
+        setSuggestionsApplied(true);
+        toast(
+          `Suggested ${suggestions.length} ${primaryMajor} courses offered in ${term}`,
+          { icon: "🎓" }
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [outlineOptions, completedCourses, suggestionsApplied, major, term]);
 
   const addCourseSlot = () => {
     if (desiredCourses.length < MAX_ANCHORS) {
