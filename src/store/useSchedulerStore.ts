@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { CourseWithSectionDetails, TimeBlock } from "@types";
+import {
+  CourseWithSectionDetails,
+  GeneratedSchedule,
+  SchedulerPreferences,
+} from "@types";
 
 interface CompletedCourse {
   code: string;
@@ -10,30 +14,9 @@ interface CompletedCourse {
   units_completed?: number;
 }
 
-interface SchedulerPreferences {
-  term: string;
-  desiredCourses: string[];
-  maxCourses: number;
-  maxCredits: number;
-  minCredits: number;
-  preferredTimeStart: string;
-  preferredTimeEnd: string;
-  avoidDays: string[];
-  campusPreferences: string[];
-}
-
-interface GeneratedSchedule {
-  id: string;
-  courses: CourseWithSectionDetails[];
-  timeBlocks?: TimeBlock[];
-  qualityScore: number;
-  qualityLabel: string;
-  reasoning: string;
-  tags: string[];
-}
-
 interface SchedulerState {
   completedCourses: CompletedCourse[];
+  detectedMajor: string | null;
   preferences: SchedulerPreferences | null;
   generatedSchedules: GeneratedSchedule[];
   selectedSchedule: GeneratedSchedule | null;
@@ -44,6 +27,7 @@ interface SchedulerState {
   error: string | null;
 
   setCompletedCourses: (courses: CompletedCourse[]) => void;
+  setDetectedMajor: (major: string | null) => void;
   setPreferences: (prefs: SchedulerPreferences) => void;
   setGeneratedSchedules: (schedules: GeneratedSchedule[]) => void;
   setSelectedSchedule: (schedule: GeneratedSchedule | null) => void;
@@ -57,6 +41,7 @@ interface SchedulerState {
 
 const initialState = {
   completedCourses: [],
+  detectedMajor: null,
   preferences: null,
   generatedSchedules: [],
   selectedSchedule: null,
@@ -73,6 +58,7 @@ export const useSchedulerStore = create<SchedulerState>()(
       ...initialState,
 
       setCompletedCourses: (courses) => set({ completedCourses: courses }),
+      setDetectedMajor: (major) => set({ detectedMajor: major }),
       setPreferences: (prefs) => set({ preferences: prefs }),
       setGeneratedSchedules: (schedules) =>
         set({ generatedSchedules: schedules }),
@@ -88,10 +74,12 @@ export const useSchedulerStore = create<SchedulerState>()(
       name: "scheduler-storage",
       partialize: (state) => ({
         completedCourses: state.completedCourses,
+        detectedMajor: state.detectedMajor,
         preferences: state.preferences,
       }),
     }
   )
 );
 
-export type { CompletedCourse, SchedulerPreferences, GeneratedSchedule };
+export type { CompletedCourse };
+export type { SchedulerPreferences, GeneratedSchedule } from "@types";
