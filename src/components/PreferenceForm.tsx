@@ -1,21 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getCurrentAndNextTerm, getCourseAPIData } from "@utils/index";
 import { CourseCombobox, OutlineOption } from "./CourseCombobox";
 import Button from "./Button";
 import toast from "react-hot-toast";
 import { useSchedulerStore, CompletedCourse } from "@store/useSchedulerStore";
-
-interface SchedulerPreferences {
-  term: string;
-  desiredCourses: string[];
-  maxCourses: number;
-  maxCredits: number;
-  minCredits: number;
-  preferredTimeStart: string;
-  preferredTimeEnd: string;
-  avoidDays: string[];
-  campusPreferences: string[];
-}
+import { SchedulerPreferences } from "@types";
 
 interface PreferenceFormProps {
   onComplete: (preferences: SchedulerPreferences) => void;
@@ -25,6 +14,8 @@ interface PreferenceFormProps {
 
 const DAYS = ["Mo", "Tu", "We", "Th", "Fr"];
 const CAMPUSES = ["Burnaby", "Surrey", "Vancouver"];
+const CREDIT_TARGETS = [9, 12, 15];
+const MAX_ANCHORS = 5;
 
 function detectMajors(courses: CompletedCourse[]): string[] {
   const deptCounts: Record<string, number> = {};
@@ -56,19 +47,22 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
   isGenerating,
 }) => {
   const completedCourses = useSchedulerStore((s) => s.completedCourses);
+  const detectedMajorLabel = useSchedulerStore((s) => s.detectedMajor);
   const [subStep, setSubStep] = useState<1 | 2>(1);
   const [desiredCourses, setDesiredCourses] = useState<string[]>([""]);
   const [term, setTerm] = useState(() => getCurrentAndNextTerm()[0]);
+  const [major, setMajor] = useState("");
+  const [creditTarget, setCreditTarget] = useState(15);
   const [maxCredits, setMaxCredits] = useState(15);
-  const [minCredits, setMinCredits] = useState(3);
+  const [minCredits, setMinCredits] = useState(9);
   const [preferredTimeStart, setPreferredTimeStart] = useState("09:00");
   const [preferredTimeEnd, setPreferredTimeEnd] = useState("18:00");
   const [avoidDays, setAvoidDays] = useState<string[]>([]);
+  const [preferFewerDays, setPreferFewerDays] = useState(false);
   const [campusPreferences, setCampusPreferences] = useState<string[]>([
     "Burnaby",
   ]);
   const [outlineOptions, setOutlineOptions] = useState<OutlineOption[]>([]);
-  const [detectedMajor, setDetectedMajor] = useState<string | null>(null);
   const [suggestionsApplied, setSuggestionsApplied] = useState(false);
 
   useEffect(() => {
@@ -92,6 +86,21 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
     fetchOptions();
   }, []);
 
+  // Department codes available as majors, sorted.
+  const deptOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const o of outlineOptions) if (o.dept) set.add(o.dept.toUpperCase());
+    return Array.from(set).sort();
+  }, [outlineOptions]);
+
+  // Default the major to the student's most-taken department.
+  useEffect(() => {
+    if (major || completedCourses.length === 0) return;
+    const detected = detectMajors(completedCourses)[0];
+    if (detected) setMajor(detected);
+  }, [completedCourses, major]);
+
+  // Suggest anchor courses from the detected major + level once options load.
   useEffect(() => {
     if (
       outlineOptions.length === 0 ||
@@ -100,11 +109,8 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
     )
       return;
 
-    const majors = detectMajors(completedCourses);
-    if (majors.length === 0) return;
-
-    const primaryMajor = majors[0];
-    setDetectedMajor(primaryMajor);
+    const primaryMajor = major || detectMajors(completedCourses)[0];
+    if (!primaryMajor) return;
 
     const level = detectLevel(completedCourses, primaryMajor);
     const maxLevel = Math.min(level + 100, 400);
@@ -121,13 +127,9 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
         return courseLevel >= level && courseLevel <= maxLevel;
       })
       .filter((o) => !completed.has(`${o.dept.toUpperCase()} ${o.number}`))
-      .sort((a, b) => {
-        const numA = parseInt(a.number) || 0;
-        const numB = parseInt(b.number) || 0;
-        return numA - numB;
-      })
+      .sort((a, b) => (parseInt(a.number) || 0) - (parseInt(b.number) || 0))
       .map((o) => `${o.dept.toUpperCase()} ${o.number}`)
-      .slice(0, 5);
+      .slice(0, MAX_ANCHORS);
 
     if (suggestions.length > 0) {
       setDesiredCourses(suggestions);
@@ -137,10 +139,10 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
         { icon: "🎓" }
       );
     }
-  }, [outlineOptions, completedCourses, suggestionsApplied]);
+  }, [outlineOptions, completedCourses, suggestionsApplied, major]);
 
   const addCourseSlot = () => {
-    if (desiredCourses.length < 6) {
+    if (desiredCourses.length < MAX_ANCHORS) {
       setDesiredCourses([...desiredCourses, ""]);
     }
   };
@@ -155,6 +157,12 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
     setDesiredCourses(updated);
   };
 
+  const selectCreditTarget = (target: number) => {
+    setCreditTarget(target);
+    setMaxCredits(target);
+    setMinCredits((prev) => Math.min(prev, target));
+  };
+
   const handleComplete = () => {
     const validCourses = desiredCourses.filter((c) => c.trim() !== "");
     if (validCourses.length === 0) {
@@ -165,13 +173,16 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
     onComplete({
       term,
       desiredCourses: validCourses,
-      maxCourses: 5,
+      major,
+      maxCourses: Math.max(Math.ceil(maxCredits / 3), validCourses.length),
       maxCredits,
       minCredits,
+      creditTarget,
       preferredTimeStart,
       preferredTimeEnd,
       avoidDays,
       campusPreferences,
+      preferFewerDays,
     });
   };
 
@@ -200,12 +211,33 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
 
           <div className="preference-form__field">
             <label>
-              What courses do you want to take?
-              {detectedMajor && (
+              What&apos;s your major?
+              {detectedMajorLabel && (
                 <span className="preference-form__major-hint">
-                  Detected major: {detectedMajor}
+                  From transcript: {detectedMajorLabel}
                 </span>
               )}
+            </label>
+            <select
+              className="preference-form__select"
+              value={major}
+              onChange={(e) => setMajor(e.target.value)}
+            >
+              <option value="">Select a department…</option>
+              {deptOptions.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+            <p className="preference-form__hint">
+              Drives which major-requirement courses get pulled into the search.
+            </p>
+          </div>
+
+          <div className="preference-form__field">
+            <label>
+              Anchor courses you definitely want (up to {MAX_ANCHORS})
             </label>
             <div className="preference-form__courses">
               {desiredCourses.map((course, i) => (
@@ -226,7 +258,7 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
                   )}
                 </div>
               ))}
-              {desiredCourses.length < 6 && (
+              {desiredCourses.length < MAX_ANCHORS && (
                 <button
                   className="preference-form__add-btn"
                   onClick={addCourseSlot}
@@ -235,6 +267,10 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
                 </button>
               )}
             </div>
+            <p className="preference-form__hint">
+              We&apos;ll build a schedule around these, then fill remaining
+              credits with major requirements and top-rated electives.
+            </p>
           </div>
 
           <div className="preference-form__actions">
@@ -254,6 +290,23 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
       ) : (
         <div className="preference-form__step">
           <h3>Schedule Constraints</h3>
+
+          <div className="preference-form__field">
+            <label>Target Credit Load</label>
+            <div className="preference-form__term-selector">
+              {CREDIT_TARGETS.map((t) => (
+                <button
+                  key={t}
+                  className={`term-btn ${
+                    creditTarget === t ? "term-btn--active" : ""
+                  }`}
+                  onClick={() => selectCreditTarget(t)}
+                >
+                  {t} credits
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="preference-form__field">
             <label>Max Credits per Term</label>
@@ -315,6 +368,18 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="preference-form__field">
+            <label>Campus Days</label>
+            <button
+              className={`campus-btn ${
+                preferFewerDays ? "campus-btn--active" : ""
+              }`}
+              onClick={() => setPreferFewerDays((v) => !v)}
+            >
+              {preferFewerDays ? "✓ " : ""}Minimize days on campus
+            </button>
           </div>
 
           <div className="preference-form__field">

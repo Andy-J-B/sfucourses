@@ -12,7 +12,15 @@ interface ParsedCourse {
 }
 
 interface TranscriptUploadProps {
-  onComplete: (courses: ParsedCourse[]) => void;
+  onComplete: (courses: ParsedCourse[], major?: string) => void;
+}
+
+// Strip the "Major in " prefix the transcript parser returns so we can prefill
+// the department-based major selector downstream.
+function extractMajorDept(majorLine?: string): string | undefined {
+  if (!majorLine) return undefined;
+  const cleaned = majorLine.replace(/^Major in\s+/i, "").trim();
+  return cleaned || undefined;
 }
 
 export const TranscriptUpload: React.FC<TranscriptUploadProps> = ({
@@ -20,6 +28,7 @@ export const TranscriptUpload: React.FC<TranscriptUploadProps> = ({
 }) => {
   const [mode, setMode] = useState<"upload" | "paste">("upload");
   const [parsedCourses, setParsedCourses] = useState<ParsedCourse[]>([]);
+  const [parsedMajor, setParsedMajor] = useState<string | undefined>(undefined);
   const [isProcessing, setIsProcessing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +43,7 @@ export const TranscriptUpload: React.FC<TranscriptUploadProps> = ({
     try {
       const result = await parseTranscriptFile(file);
       setParsedCourses(result.courses);
+      setParsedMajor(extractMajorDept(result.major));
       toast.success(`Parsed ${result.courses.length} courses`);
     } catch (err) {
       toast.error(
@@ -65,7 +75,7 @@ export const TranscriptUpload: React.FC<TranscriptUploadProps> = ({
       toast.error("No courses to import");
       return;
     }
-    onComplete(parsedCourses);
+    onComplete(parsedCourses, parsedMajor);
   };
 
   return (
