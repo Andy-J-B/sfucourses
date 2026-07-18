@@ -232,7 +232,12 @@ function backtrack(
       )!.course;
       return sum + (parseFloat(course.units) || 3);
     }, 0);
-    if (totalCredits < preferences.minCredits) return;
+    if (totalCredits < preferences.minCredits) {
+      console.log(
+        `[Backtrack] REJECTED: credits ${totalCredits} < min ${preferences.minCredits}`
+      );
+      return;
+    }
 
     const { score, tags, reasoning } = scoreSchedule(currentSlots, preferences);
 
@@ -262,6 +267,13 @@ function backtrack(
       reasoning: reasoning.join("; "),
       tags,
     });
+    console.log(
+      `[Backtrack] ACCEPTED schedule #${
+        results.length
+      } score=${score} courses=${selectedCourses
+        .map((c) => `${c.dept} ${c.number}`)
+        .join(", ")}`
+    );
 
     return;
   }
@@ -275,8 +287,15 @@ function backtrack(
 
     if (groupIndex === groupEntries.length) {
       const sectionSlots = picked.flatMap((s) => getSectionSlots(course, s));
+      const pickedLabel = picked.map((s) => s.section).join("+");
+      const courseLabel = `${course.dept} ${course.number}`;
 
-      if (sectionSlots.length === 0) return;
+      if (sectionSlots.length === 0) {
+        console.log(
+          `[Backtrack] REJECTED ${courseLabel} [${pickedLabel}]: no valid time slots`
+        );
+        return;
+      }
 
       let hasConflictFlag = false;
       for (const newSlot of sectionSlots) {
@@ -288,14 +307,24 @@ function backtrack(
         }
         if (hasConflictFlag) break;
       }
-      if (hasConflictFlag) return;
+      if (hasConflictFlag) {
+        console.log(
+          `[Backtrack] REJECTED ${courseLabel} [${pickedLabel}]: time conflict`
+        );
+        return;
+      }
 
       if (preferences.avoidDays.length > 0) {
         const sectionDays = sectionSlots.map((s) => s.day);
         const hasAvoidedDay = sectionDays.some((d) =>
           preferences.avoidDays.includes(d)
         );
-        if (hasAvoidedDay) return;
+        if (hasAvoidedDay) {
+          console.log(
+            `[Backtrack] REJECTED ${courseLabel} [${pickedLabel}]: avoided days`
+          );
+          return;
+        }
       }
 
       if (preferences.campusPreferences.length > 0) {
@@ -307,7 +336,12 @@ function backtrack(
             c.toLowerCase().includes(p.toLowerCase())
           )
         );
-        if (!hasPreferredCampus && campuses.length > 0) return;
+        if (!hasPreferredCampus && campuses.length > 0) {
+          console.log(
+            `[Backtrack] REJECTED ${courseLabel} [${pickedLabel}]: campus ${campuses} not in ${preferences.campusPreferences}`
+          );
+          return;
+        }
       }
 
       const newSections = [...currentSections];
@@ -338,10 +372,24 @@ export function generateSchedules(
   courses: CourseWithSectionDetails[],
   preferences: SchedulerPreferences
 ): GeneratedSchedule[] {
+  console.log("[Backtrack] Starting with", courses.length, "courses");
+  for (const course of courses) {
+    const groups = groupSectionsByCode(course.sections);
+    const groupInfo = Array.from(groups.entries())
+      .map(
+        ([code, secs]) => `${code}: [${secs.map((s) => s.section).join(", ")}]`
+      )
+      .join(" | ");
+    console.log(
+      `[Backtrack] ${course.dept} ${course.number} (${course.units} units): ${groupInfo}`
+    );
+  }
+
   const results: GeneratedSchedule[] = [];
   const maxResults = 5;
 
   backtrack(courses, 0, [], [], results, preferences, maxResults);
+  console.log(`[Backtrack] Done: ${results.length} schedules found`);
 
   results.sort((a, b) => b.qualityScore - a.qualityScore);
 
