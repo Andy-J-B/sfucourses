@@ -1,14 +1,25 @@
-import { CourseWithSectionDetails } from "@types";
+import {
+  CourseReviewSummary,
+  CourseWithSectionDetails,
+  GeneratedSchedule,
+  InstructorReviewSummary,
+  SchedulerPreferences,
+} from "@types";
 import { toTermCode } from "@utils/format";
+import { getCourseAPIData } from "@utils/index";
 import {
   parseTranscriptText,
   parseTextTranscript,
   ParsedCourse,
 } from "./transcriptParser";
 import {
-  generateSchedules as generateSchedulesLocal,
-  SchedulerPreferences,
-} from "./scheduleGenerator";
+  buildCspPool,
+  buildRmpIndex,
+  normalizeCode,
+  OutlineLite,
+  selectCandidatePool,
+  solveSchedules,
+} from "./csp";
 
 export type { ParsedCourse, SchedulerPreferences };
 
@@ -18,11 +29,16 @@ interface ParseTranscriptResponse {
 }
 
 interface GenerateScheduleResponse {
-  schedules: ReturnType<typeof generateSchedulesLocal>;
+  schedules: GeneratedSchedule[];
   total: number;
+  sectionsData: CourseWithSectionDetails[];
   timing: {
     total_ms: number;
   };
+}
+
+export interface CompletedCourseLite {
+  code: string;
 }
 
 /**
@@ -48,62 +64,140 @@ export async function parseTranscriptFile(
   return response.json();
 }
 
+// Most common course level (100/200/…) the student has taken in a department,
+// used to bias the pool toward requirement courses they're ready for.
+function detectLevel(completedCodes: string[], major: string): number {
+  const counts: Record<number, number> = {};
+  for (const code of completedCodes) {
+    const [dept, number] = normalizeCode(code).split(" ");
+    if (major && dept !== major.toUpperCase()) continue;
+    const level = Math.floor((parseInt(number) || 0) / 100) * 100;
+    if (level > 0) counts[level] = (counts[level] || 0) + 1;
+  }
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  return sorted.length > 0 ? parseInt(sorted[0][0]) : 100;
+}
+
+function inferMajor(
+  preferenceMajor: string,
+  completedCodes: string[],
+  anchors: string[]
+): string {
+  if (preferenceMajor) return preferenceMajor.toUpperCase();
+  const deptCounts: Record<string, number> = {};
+  for (const code of [...completedCodes, ...anchors]) {
+    const dept = normalizeCode(code).split(" ")[0];
+    if (dept) deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+  }
+  const sorted = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]);
+  return sorted.length > 0 ? sorted[0][0] : "";
+}
+
 /**
- * Generate optimized schedules using client-side backtracking algorithm.
- * Fetches available sections from the existing API, then runs the optimizer.
+ * Expand the candidate pool from the student's anchor courses (major
+ * requirements + electives + section variants) and run the CSP engine to find
+ * the best conflict-free, preference-satisfying schedules.
  */
 export async function generateSchedules(
-  desiredCourses: string[],
-  preferences: SchedulerPreferences
+  preferences: SchedulerPreferences,
+  completedCourses: CompletedCourseLite[] = []
 ): Promise<GenerateScheduleResponse> {
   const startTime = performance.now();
 
   const termCode = toTermCode(preferences.term);
+  const anchors = preferences.desiredCourses.map(normalizeCode).filter(Boolean);
+  const completedCodes = completedCourses.map((c) => c.code);
+  const major = inferMajor(preferences.major, completedCodes, anchors);
+  const level = detectLevel(completedCodes, major);
 
-  const sectionsPromises = desiredCourses.map(async (courseCode) => {
-    const [dept, number] = courseCode.split(" ");
-    if (!dept || !number) return null;
-    try {
-      const data = await import("./index").then((mod) =>
-        mod.getCourseAPIData(
-          `/sections?term=${encodeURIComponent(
-            termCode
-          )}&dept=${encodeURIComponent(dept)}&number=${encodeURIComponent(
-            number
-          )}`
-        )
-      );
-      return data?.[0] || null;
-    } catch (error) {
-      console.error(`Failed to fetch sections for ${courseCode}:`, error);
-      return null;
-    }
+  // Fetch the reference data the pool builder needs, in parallel.
+  const [outlinesRaw, courseReviews, instructorReviews] = await Promise.all([
+    getCourseAPIData("/outlines?short=true").catch(() => []),
+    getCourseAPIData("/reviews/courses").catch(
+      () => [] as CourseReviewSummary[]
+    ),
+    getCourseAPIData("/reviews/instructors").catch(
+      () => [] as InstructorReviewSummary[]
+    ),
+  ]);
+
+  const outlines: OutlineLite[] = (
+    Array.isArray(outlinesRaw) ? outlinesRaw : []
+  )
+    .map((o: any) => ({
+      dept: o.dept || "",
+      number: o.number || "",
+      title: o.title || "",
+      units: parseFloat(o.units) || 3,
+    }))
+    .filter((o: OutlineLite) => o.dept && o.number);
+
+  const rmp = buildRmpIndex(instructorReviews, courseReviews);
+
+  const candidates = selectCandidatePool({
+    anchors,
+    major,
+    completed: new Set(completedCodes.map(normalizeCode)),
+    level,
+    outlines,
+    courseQuality: (code) => rmp.courseQuality(code),
   });
 
-  const results = await Promise.all(sectionsPromises);
-  const sectionsData = results.filter(Boolean) as CourseWithSectionDetails[];
-  const failed = desiredCourses.filter((_, i) => !results[i]);
+  const fetchSections = async (dept: string, number: string) => {
+    const data = await getCourseAPIData(
+      `/sections?term=${encodeURIComponent(termCode)}&dept=${encodeURIComponent(
+        dept
+      )}&number=${encodeURIComponent(number)}`
+    );
+    return (data?.[0] as CourseWithSectionDetails) || null;
+  };
 
-  if (sectionsData.length === 0) {
+  const { courses: pool, diagnostics } = await buildCspPool({
+    candidates,
+    preferences,
+    rmp,
+    fetchSections,
+  });
+
+  if (diagnostics.anchorsNotOffered.length > 0) {
     throw new Error(
-      failed.length > 0
-        ? `No sections found for: ${failed.join(
-            ", "
-          )}. These courses may not be offered in ${preferences.term}.`
-        : "No sections found for the specified courses"
+      `These anchor courses aren't offered in ${
+        preferences.term
+      }: ${diagnostics.anchorsNotOffered.join(
+        ", "
+      )}. Remove them or pick a different term.`
     );
   }
 
-  const schedules = generateSchedulesLocal(sectionsData, preferences);
+  // An offered anchor whose every section is filtered out by the day/campus
+  // preferences would be silently dropped from the pool — surface it instead.
+  if (diagnostics.anchorsUnplaceable.length > 0) {
+    throw new Error(
+      `No section of ${diagnostics.anchorsUnplaceable.join(
+        ", "
+      )} fits your avoided-days / campus filters. Loosen those to include ${
+        diagnostics.anchorsUnplaceable.length > 1
+          ? "these anchors"
+          : "this anchor"
+      }.`
+    );
+  }
+
+  const schedules = solveSchedules(pool, preferences);
+
+  if (schedules.length === 0) {
+    throw new Error(
+      `No valid schedule found: your anchor courses could not be combined into ${preferences.minCredits}–${preferences.maxCredits} credits without a time conflict. Try loosening avoided days, campus, or the credit range.`
+    );
+  }
 
   const elapsed = performance.now() - startTime;
 
   return {
     schedules,
     total: schedules.length,
-    timing: {
-      total_ms: Math.round(elapsed),
-    },
+    sectionsData: pool.map((c) => c.course),
+    timing: { total_ms: Math.round(elapsed) },
   };
 }
 

@@ -176,20 +176,27 @@ export interface CourseReviewSummary {
 
 export interface SchedulerPreferences {
   term: string;
+  // Anchor courses the student explicitly wants; seeds the expanded pool.
   desiredCourses: string[];
+  // Department code that drives which major-requirement courses are pulled in.
+  major: string;
   maxCourses: number;
   maxCredits: number;
   minCredits: number;
+  // Ideal credit load (e.g. 9/12/15); solutions are ranked by closeness to it.
+  creditTarget: number;
   preferredTimeStart: string;
   preferredTimeEnd: string;
   avoidDays: string[];
   campusPreferences: string[];
+  // Campus-day preference: prefer schedules that span fewer distinct days.
+  preferFewerDays: boolean;
 }
 
 export interface GeneratedSchedule {
   id: string;
   courses: CourseWithSectionDetails[];
-  timeBlocks: TimeBlock[];
+  timeBlocks?: TimeBlock[];
   qualityScore: number;
   qualityLabel: string;
   reasoning: string;

@@ -24,19 +24,22 @@ const SchedulerPage = () => {
     selectedSchedule,
     isGenerating,
     setCompletedCourses,
+    setDetectedMajor,
     setPreferences,
     setGeneratedSchedules,
     setSelectedSchedule,
     setIsGenerating,
+    setSectionsData,
     setError,
   } = useSchedulerStore();
 
   const handleTranscriptComplete = useCallback(
-    (courses: CompletedCourse[]) => {
+    (courses: CompletedCourse[], major?: string) => {
       setCompletedCourses(courses);
+      if (major) setDetectedMajor(major);
       setStep("preferences");
     },
-    [setCompletedCourses]
+    [setCompletedCourses, setDetectedMajor]
   );
 
   const handlePreferencesComplete = useCallback(
@@ -46,8 +49,9 @@ const SchedulerPage = () => {
       setError(null);
 
       try {
-        const result = await generateSchedules(prefs.desiredCourses, prefs);
+        const result = await generateSchedules(prefs, completedCourses);
         setGeneratedSchedules(result.schedules);
+        setSectionsData(result.sectionsData);
         if (result.schedules.length > 0) {
           setSelectedSchedule(result.schedules[0]);
         }
@@ -63,8 +67,10 @@ const SchedulerPage = () => {
       }
     },
     [
+      completedCourses,
       setPreferences,
       setGeneratedSchedules,
+      setSectionsData,
       setSelectedSchedule,
       setIsGenerating,
       setError,

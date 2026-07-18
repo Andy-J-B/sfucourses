@@ -93,11 +93,13 @@ export const ScheduleResults: React.FC<ScheduleResultsProps> = ({
       </div>
 
       <div className="schedule-results__footer">
-        <Button
-          label="Refine Preferences"
-          type="secondary"
-          onClick={onRefine}
-        />
+        <div className="schedule-results__footer-buttons">
+          <Button
+            label="Refine Preferences"
+            type="secondary"
+            onClick={onRefine}
+          />
+        </div>
       </div>
     </div>
   );
