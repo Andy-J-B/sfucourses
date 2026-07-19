@@ -21,6 +21,7 @@ import {
   solveSchedules,
 } from "./csp";
 import curatedElectivesData from "../data/curatedElectives.json";
+import { detectAverseSubjects } from "./transcript/academicProfile";
 
 const CURATED_ELECTIVES = curatedElectivesData.electives.map((e) => e.code);
 
@@ -42,6 +43,9 @@ interface GenerateScheduleResponse {
 
 export interface CompletedCourseLite {
   code: string;
+  term?: string;
+  grade?: string;
+  units_completed?: number;
 }
 
 /**
@@ -81,7 +85,7 @@ function detectLevel(completedCodes: string[], major: string): number {
   return sorted.length > 0 ? parseInt(sorted[0][0]) : 100;
 }
 
-function inferMajor(
+export function inferMajor(
   preferenceMajor: string,
   completedCodes: string[],
   anchors: string[]
@@ -137,6 +141,10 @@ export async function generateSchedules(
 
   const rmp = buildRmpIndex(instructorReviews, courseReviews);
 
+  // Subjects the student performed poorly in are steered away from for
+  // electives (never for anchors or major requirements).
+  const averseSubjects = detectAverseSubjects(completedCourses);
+
   const candidates = selectCandidatePool({
     anchors,
     major,
@@ -145,6 +153,7 @@ export async function generateSchedules(
     outlines,
     courseQuality: (code) => rmp.courseQuality(code),
     curatedElectives: CURATED_ELECTIVES,
+    averseSubjects,
   });
 
   const fetchSections = async (dept: string, number: string) => {

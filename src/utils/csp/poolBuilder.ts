@@ -48,11 +48,13 @@ export function selectCandidatePool(params: {
   outlines: OutlineLite[];
   courseQuality: (code: string) => { rating: number; reviews: number };
   curatedElectives?: string[]; // ordered best-first "known-good" codes
+  averseSubjects?: Set<string>; // depts to skip for electives (weak subjects)
   maxPool?: number;
 }): CandidateCourse[] {
   const maxPool = params.maxPool ?? DEFAULT_MAX_POOL;
   const major = params.major.toUpperCase();
   const completed = params.completed;
+  const averse = params.averseSubjects ?? new Set<string>();
 
   const anchorCodes = Array.from(new Set(params.anchors.map(normalizeCode)));
   const anchorSet = new Set(anchorCodes);
@@ -105,8 +107,11 @@ export function selectCandidatePool(params: {
 
   // Electives: cross-dept, level-appropriate. Curated "known-good" courses rank
   // first (in curated order); the rest fall back to live course-review quality.
+  // Subjects the student did poorly in are excluded outright (electives only —
+  // major requirements are never suppressed by aversion).
   const electiveCandidates: CandidateCourse[] = params.outlines
     .filter((o) => o.dept.toUpperCase() !== major)
+    .filter((o) => !averse.has(o.dept.toUpperCase()))
     .filter((o) => courseLevel(o.number) >= 100)
     .map((o) => ({ o, code: normalizeCode(`${o.dept} ${o.number}`) }))
     .filter(({ o, code }) => isEligible(o, code))
