@@ -1,10 +1,12 @@
 import { useState, useCallback } from "react";
+import { useRouter } from "next/router";
 import {
   TranscriptUpload,
   PreferenceForm,
   ScheduleResults,
   WeeklySchedule,
   ScheduleInsights,
+  Button,
 } from "@components";
 import {
   useSchedulerStore,
@@ -12,16 +14,19 @@ import {
   SchedulerPreferences,
 } from "@store/useSchedulerStore";
 import { generateSchedules } from "@utils/schedulerApi";
+import { toShortenedTerm } from "@utils";
 import toast from "react-hot-toast";
 
 type Step = "transcript" | "preferences" | "results";
 
 const SchedulerPage = () => {
+  const router = useRouter();
   const [step, setStep] = useState<Step>("transcript");
   const {
     completedCourses,
     generatedSchedules,
     selectedSchedule,
+    preferences,
     isGenerating,
     setCompletedCourses,
     setDetectedMajor,
@@ -136,6 +141,21 @@ const SchedulerPage = () => {
                 />
                 <ScheduleInsights
                   coursesWithSections={selectedSchedule.courses}
+                />
+                <Button
+                  label="Open in Schedule Planner"
+                  className="scheduler-page__open-schedule"
+                  onClick={() => {
+                    const classNums = selectedSchedule.courses.flatMap((c) =>
+                      c.sections.map((s) => s.classNumber)
+                    );
+                    const termShort = preferences
+                      ? toShortenedTerm(preferences.term)
+                      : "";
+                    router.push(
+                      `/schedule?term=${termShort}&courses=${classNums.join("-")}`
+                    );
+                  }}
                 />
               </>
             ) : (
