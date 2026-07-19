@@ -32,7 +32,7 @@ export function scoreSolution(
   const preferredEnd = timeToMinutes(preferences.preferredTimeEnd);
 
   const outside = slots.filter(
-    (s) => s.start < preferredStart || s.start > preferredEnd
+    (s) => s.start < preferredStart || s.end > preferredEnd
   ).length;
   if (outside > 0) {
     score -= outside * 5;
