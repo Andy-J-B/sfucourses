@@ -1,0 +1,1212 @@
+{
+  "generatedAt": "2026-07-19T06:14:50.140Z",
+  "source": "https://api.sfucourses.com/v1/rest/reviews/courses",
+  "criteria": {
+    "MIN_REVIEWS": 10,
+    "MIN_RATING": 4,
+    "PER_DEPT_CAP": 6,
+    "MAX_TOTAL": 120
+  },
+  "electives": [
+    {
+      "code": "ILS 101",
+      "dept": "ILS",
+      "number": "101",
+      "level": 100,
+      "rating": 4.92,
+      "difficulty": 1.08,
+      "reviews": 12,
+      "score": 6.337
+    },
+    {
+      "code": "CMNS 448",
+      "dept": "CMNS",
+      "number": "448",
+      "level": 400,
+      "rating": 5,
+      "difficulty": 1.45,
+      "reviews": 11,
+      "score": 6.284
+    },
+    {
+      "code": "TEKX 101",
+      "dept": "TEKX",
+      "number": "101",
+      "level": 100,
+      "rating": 4.81,
+      "difficulty": 1.5,
+      "reviews": 16,
+      "score": 6.095
+    },
+    {
+      "code": "MATH 360",
+      "dept": "MATH",
+      "number": "360",
+      "level": 300,
+      "rating": 5,
+      "difficulty": 2.15,
+      "reviews": 13,
+      "score": 6.046
+    },
+    {
+      "code": "FREN 120",
+      "dept": "FREN",
+      "number": "120",
+      "level": 100,
+      "rating": 4.74,
+      "difficulty": 1.97,
+      "reviews": 64,
+      "score": 6.041
+    },
+    {
+      "code": "EDU 250",
+      "dept": "EDU",
+      "number": "250",
+      "level": 200,
+      "rating": 4.91,
+      "difficulty": 2.09,
+      "reviews": 11,
+      "score": 5.97
+    },
+    {
+      "code": "GEGO 102",
+      "dept": "GEGO",
+      "number": "102",
+      "level": 100,
+      "rating": 4.64,
+      "difficulty": 1.43,
+      "reviews": 14,
+      "score": 5.942
+    },
+    {
+      "code": "ENGL 404",
+      "dept": "ENGL",
+      "number": "404",
+      "level": 400,
+      "rating": 5,
+      "difficulty": 2.6,
+      "reviews": 10,
+      "score": 5.877
+    },
+    {
+      "code": "ARAB 100",
+      "dept": "ARAB",
+      "number": "100",
+      "level": 100,
+      "rating": 4.91,
+      "difficulty": 2.36,
+      "reviews": 11,
+      "score": 5.875
+    },
+    {
+      "code": "BUS 203",
+      "dept": "BUS",
+      "number": "203",
+      "level": 200,
+      "rating": 4.5,
+      "difficulty": 1.28,
+      "reviews": 18,
+      "score": 5.869
+    },
+    {
+      "code": "IAT 210",
+      "dept": "IAT",
+      "number": "210",
+      "level": 200,
+      "rating": 4.71,
+      "difficulty": 1.88,
+      "reviews": 17,
+      "score": 5.866
+    },
+    {
+      "code": "HSCI 120",
+      "dept": "HSCI",
+      "number": "120",
+      "level": 100,
+      "rating": 4.62,
+      "difficulty": 2.31,
+      "reviews": 141,
+      "score": 5.861
+    },
+    {
+      "code": "GERM 102",
+      "dept": "GERM",
+      "number": "102",
+      "level": 100,
+      "rating": 4.69,
+      "difficulty": 2.03,
+      "reviews": 34,
+      "score": 5.857
+    },
+    {
+      "code": "HSCI 304",
+      "dept": "HSCI",
+      "number": "304",
+      "level": 300,
+      "rating": 4.72,
+      "difficulty": 2.62,
+      "reviews": 110,
+      "score": 5.853
+    },
+    {
+      "code": "CMN 110",
+      "dept": "CMN",
+      "number": "110",
+      "level": 100,
+      "rating": 4.75,
+      "difficulty": 2.06,
+      "reviews": 16,
+      "score": 5.839
+    },
+    {
+      "code": "BPK 241",
+      "dept": "BPK",
+      "number": "241",
+      "level": 200,
+      "rating": 4.94,
+      "difficulty": 2.94,
+      "reviews": 47,
+      "score": 5.837
+    },
+    {
+      "code": "ENSC 483",
+      "dept": "ENSC",
+      "number": "483",
+      "level": 400,
+      "rating": 5,
+      "difficulty": 2.73,
+      "reviews": 11,
+      "score": 5.836
+    },
+    {
+      "code": "ARCH 252",
+      "dept": "ARCH",
+      "number": "252",
+      "level": 200,
+      "rating": 4.6,
+      "difficulty": 2,
+      "reviews": 41,
+      "score": 5.804
+    },
+    {
+      "code": "CMNS 321",
+      "dept": "CMNS",
+      "number": "321",
+      "level": 300,
+      "rating": 4.83,
+      "difficulty": 2.67,
+      "reviews": 30,
+      "score": 5.758
+    },
+    {
+      "code": "MATH 292",
+      "dept": "MATH",
+      "number": "292",
+      "level": 200,
+      "rating": 5,
+      "difficulty": 3,
+      "reviews": 10,
+      "score": 5.738
+    },
+    {
+      "code": "GDST 200",
+      "dept": "GDST",
+      "number": "200",
+      "level": 200,
+      "rating": 4.75,
+      "difficulty": 2.36,
+      "reviews": 14,
+      "score": 5.727
+    },
+    {
+      "code": "STAT 260",
+      "dept": "STAT",
+      "number": "260",
+      "level": 200,
+      "rating": 4.71,
+      "difficulty": 2.43,
+      "reviews": 28,
+      "score": 5.715
+    },
+    {
+      "code": "BISC 405",
+      "dept": "BISC",
+      "number": "405",
+      "level": 400,
+      "rating": 4.81,
+      "difficulty": 2.61,
+      "reviews": 18,
+      "score": 5.714
+    },
+    {
+      "code": "BUS 233",
+      "dept": "BUS",
+      "number": "233",
+      "level": 200,
+      "rating": 4.75,
+      "difficulty": 2.84,
+      "reviews": 55,
+      "score": 5.712
+    },
+    {
+      "code": "PHIL 329",
+      "dept": "PHIL",
+      "number": "329",
+      "level": 300,
+      "rating": 4.93,
+      "difficulty": 2.93,
+      "reviews": 14,
+      "score": 5.707
+    },
+    {
+      "code": "HSCI 483",
+      "dept": "HSCI",
+      "number": "483",
+      "level": 400,
+      "rating": 4.81,
+      "difficulty": 2.62,
+      "reviews": 16,
+      "score": 5.703
+    },
+    {
+      "code": "FASS 208",
+      "dept": "FASS",
+      "number": "208",
+      "level": 200,
+      "rating": 4.73,
+      "difficulty": 2.36,
+      "reviews": 11,
+      "score": 5.695
+    },
+    {
+      "code": "HSCI 204",
+      "dept": "HSCI",
+      "number": "204",
+      "level": 200,
+      "rating": 4.65,
+      "difficulty": 2.65,
+      "reviews": 52,
+      "score": 5.668
+    },
+    {
+      "code": "LBST 330",
+      "dept": "LBST",
+      "number": "330",
+      "level": 300,
+      "rating": 4.87,
+      "difficulty": 2.93,
+      "reviews": 15,
+      "score": 5.651
+    },
+    {
+      "code": "HIST 401",
+      "dept": "HIST",
+      "number": "401",
+      "level": 400,
+      "rating": 4.77,
+      "difficulty": 2.64,
+      "reviews": 11,
+      "score": 5.637
+    },
+    {
+      "code": "HIST 220",
+      "dept": "HIST",
+      "number": "220",
+      "level": 200,
+      "rating": 4.85,
+      "difficulty": 2.94,
+      "reviews": 17,
+      "score": 5.635
+    },
+    {
+      "code": "MBB 438",
+      "dept": "MBB",
+      "number": "438",
+      "level": 400,
+      "rating": 4.86,
+      "difficulty": 2.91,
+      "reviews": 11,
+      "score": 5.633
+    },
+    {
+      "code": "BUS 466",
+      "dept": "BUS",
+      "number": "466",
+      "level": 400,
+      "rating": 4.42,
+      "difficulty": 1.88,
+      "reviews": 32,
+      "score": 5.632
+    },
+    {
+      "code": "EDUC 240",
+      "dept": "EDUC",
+      "number": "240",
+      "level": 200,
+      "rating": 4.2,
+      "difficulty": 1.76,
+      "reviews": 76,
+      "score": 5.619
+    },
+    {
+      "code": "CRIM 410",
+      "dept": "CRIM",
+      "number": "410",
+      "level": 400,
+      "rating": 4.65,
+      "difficulty": 2.5,
+      "reviews": 24,
+      "score": 5.615
+    },
+    {
+      "code": "CMNS 348",
+      "dept": "CMNS",
+      "number": "348",
+      "level": 300,
+      "rating": 4.5,
+      "difficulty": 2.16,
+      "reviews": 25,
+      "score": 5.588
+    },
+    {
+      "code": "CRIM 241",
+      "dept": "CRIM",
+      "number": "241",
+      "level": 200,
+      "rating": 4.38,
+      "difficulty": 2.41,
+      "reviews": 82,
+      "score": 5.587
+    },
+    {
+      "code": "ENSC 383",
+      "dept": "ENSC",
+      "number": "383",
+      "level": 300,
+      "rating": 4.59,
+      "difficulty": 2.46,
+      "reviews": 28,
+      "score": 5.584
+    },
+    {
+      "code": "ARAB 134",
+      "dept": "ARAB",
+      "number": "134",
+      "level": 100,
+      "rating": 4.7,
+      "difficulty": 2.6,
+      "reviews": 10,
+      "score": 5.578
+    },
+    {
+      "code": "REM 350",
+      "dept": "REM",
+      "number": "350",
+      "level": 300,
+      "rating": 4.4,
+      "difficulty": 1.97,
+      "reviews": 30,
+      "score": 5.573
+    },
+    {
+      "code": "POL 132",
+      "dept": "POL",
+      "number": "132",
+      "level": 100,
+      "rating": 4.62,
+      "difficulty": 2.46,
+      "reviews": 13,
+      "score": 5.558
+    },
+    {
+      "code": "BUS 238",
+      "dept": "BUS",
+      "number": "238",
+      "level": 200,
+      "rating": 4.55,
+      "difficulty": 2.48,
+      "reviews": 33,
+      "score": 5.556
+    },
+    {
+      "code": "ENGL 311",
+      "dept": "ENGL",
+      "number": "311",
+      "level": 300,
+      "rating": 4.53,
+      "difficulty": 2.4,
+      "reviews": 30,
+      "score": 5.553
+    },
+    {
+      "code": "CMNS 428",
+      "dept": "CMNS",
+      "number": "428",
+      "level": 400,
+      "rating": 4.63,
+      "difficulty": 2.53,
+      "reviews": 15,
+      "score": 5.551
+    },
+    {
+      "code": "CRIM 452",
+      "dept": "CRIM",
+      "number": "452",
+      "level": 400,
+      "rating": 4.3,
+      "difficulty": 1.6,
+      "reviews": 15,
+      "score": 5.546
+    },
+    {
+      "code": "EDU 240",
+      "dept": "EDU",
+      "number": "240",
+      "level": 200,
+      "rating": 4.33,
+      "difficulty": 1.81,
+      "reviews": 26,
+      "score": 5.544
+    },
+    {
+      "code": "BUS 449",
+      "dept": "BUS",
+      "number": "449",
+      "level": 400,
+      "rating": 4.59,
+      "difficulty": 2.68,
+      "reviews": 37,
+      "score": 5.541
+    },
+    {
+      "code": "ENG 115",
+      "dept": "ENG",
+      "number": "115",
+      "level": 100,
+      "rating": 4.57,
+      "difficulty": 2.48,
+      "reviews": 23,
+      "score": 5.538
+    },
+    {
+      "code": "EDUC 382",
+      "dept": "EDUC",
+      "number": "382",
+      "level": 300,
+      "rating": 4.57,
+      "difficulty": 2.4,
+      "reviews": 15,
+      "score": 5.536
+    },
+    {
+      "code": "BUS 484",
+      "dept": "BUS",
+      "number": "484",
+      "level": 400,
+      "rating": 4.75,
+      "difficulty": 2.9,
+      "reviews": 10,
+      "score": 5.523
+    },
+    {
+      "code": "GEOG 321",
+      "dept": "GEOG",
+      "number": "321",
+      "level": 300,
+      "rating": 4.75,
+      "difficulty": 2.9,
+      "reviews": 10,
+      "score": 5.523
+    },
+    {
+      "code": "CHEM 100",
+      "dept": "CHEM",
+      "number": "100",
+      "level": 100,
+      "rating": 4.68,
+      "difficulty": 2.73,
+      "reviews": 11,
+      "score": 5.516
+    },
+    {
+      "code": "PHIL 150",
+      "dept": "PHIL",
+      "number": "150",
+      "level": 100,
+      "rating": 4.49,
+      "difficulty": 2.52,
+      "reviews": 42,
+      "score": 5.516
+    },
+    {
+      "code": "GERM 103",
+      "dept": "GERM",
+      "number": "103",
+      "level": 100,
+      "rating": 4.47,
+      "difficulty": 2.22,
+      "reviews": 18,
+      "score": 5.51
+    },
+    {
+      "code": "ECON 334",
+      "dept": "ECON",
+      "number": "334",
+      "level": 300,
+      "rating": 4.54,
+      "difficulty": 2.38,
+      "reviews": 13,
+      "score": 5.506
+    },
+    {
+      "code": "ENGL 347",
+      "dept": "ENGL",
+      "number": "347",
+      "level": 300,
+      "rating": 4.84,
+      "difficulty": 3.36,
+      "reviews": 22,
+      "score": 5.496
+    },
+    {
+      "code": "HSCI 403",
+      "dept": "HSCI",
+      "number": "403",
+      "level": 400,
+      "rating": 4.33,
+      "difficulty": 1.83,
+      "reviews": 12,
+      "score": 5.485
+    },
+    {
+      "code": "POL 335",
+      "dept": "POL",
+      "number": "335",
+      "level": 300,
+      "rating": 4.45,
+      "difficulty": 2.18,
+      "reviews": 11,
+      "score": 5.478
+    },
+    {
+      "code": "INDG 332",
+      "dept": "INDG",
+      "number": "332",
+      "level": 300,
+      "rating": 4.56,
+      "difficulty": 2.56,
+      "reviews": 16,
+      "score": 5.474
+    },
+    {
+      "code": "CRIM 213",
+      "dept": "CRIM",
+      "number": "213",
+      "level": 200,
+      "rating": 4.5,
+      "difficulty": 2.67,
+      "reviews": 42,
+      "score": 5.473
+    },
+    {
+      "code": "CRIM 459",
+      "dept": "CRIM",
+      "number": "459",
+      "level": 400,
+      "rating": 4.55,
+      "difficulty": 2.64,
+      "reviews": 22,
+      "score": 5.458
+    },
+    {
+      "code": "ENG 313",
+      "dept": "ENG",
+      "number": "313",
+      "level": 300,
+      "rating": 4.65,
+      "difficulty": 2.85,
+      "reviews": 13,
+      "score": 5.451
+    },
+    {
+      "code": "BISC 312",
+      "dept": "BISC",
+      "number": "312",
+      "level": 300,
+      "rating": 4.45,
+      "difficulty": 2.27,
+      "reviews": 11,
+      "score": 5.447
+    },
+    {
+      "code": "KIN 140",
+      "dept": "KIN",
+      "number": "140",
+      "level": 100,
+      "rating": 4.18,
+      "difficulty": 2.25,
+      "reviews": 122,
+      "score": 5.443
+    },
+    {
+      "code": "BISC 317",
+      "dept": "BISC",
+      "number": "317",
+      "level": 300,
+      "rating": 4.62,
+      "difficulty": 2.92,
+      "reviews": 24,
+      "score": 5.438
+    },
+    {
+      "code": "FREN 121",
+      "dept": "FREN",
+      "number": "121",
+      "level": 100,
+      "rating": 4.47,
+      "difficulty": 2.4,
+      "reviews": 15,
+      "score": 5.436
+    },
+    {
+      "code": "ENSC 101",
+      "dept": "ENSC",
+      "number": "101",
+      "level": 100,
+      "rating": 4.35,
+      "difficulty": 2.19,
+      "reviews": 26,
+      "score": 5.431
+    },
+    {
+      "code": "ECON 113",
+      "dept": "ECON",
+      "number": "113",
+      "level": 100,
+      "rating": 4.44,
+      "difficulty": 2.71,
+      "reviews": 48,
+      "score": 5.422
+    },
+    {
+      "code": "ENGL 329",
+      "dept": "ENGL",
+      "number": "329",
+      "level": 300,
+      "rating": 4.6,
+      "difficulty": 2.8,
+      "reviews": 10,
+      "score": 5.407
+    },
+    {
+      "code": "FPA 136",
+      "dept": "FPA",
+      "number": "136",
+      "level": 100,
+      "rating": 4.48,
+      "difficulty": 2.61,
+      "reviews": 23,
+      "score": 5.403
+    },
+    {
+      "code": "MATH 467",
+      "dept": "MATH",
+      "number": "467",
+      "level": 400,
+      "rating": 4.46,
+      "difficulty": 2.46,
+      "reviews": 13,
+      "score": 5.398
+    },
+    {
+      "code": "EDUC 355",
+      "dept": "EDUC",
+      "number": "355",
+      "level": 300,
+      "rating": 4.14,
+      "difficulty": 1.57,
+      "reviews": 14,
+      "score": 5.393
+    },
+    {
+      "code": "CMNS 473",
+      "dept": "CMNS",
+      "number": "473",
+      "level": 400,
+      "rating": 4.61,
+      "difficulty": 2.93,
+      "reviews": 14,
+      "score": 5.387
+    },
+    {
+      "code": "EDUC 212",
+      "dept": "EDUC",
+      "number": "212",
+      "level": 200,
+      "rating": 4.55,
+      "difficulty": 2.85,
+      "reviews": 20,
+      "score": 5.378
+    },
+    {
+      "code": "CRIM 203",
+      "dept": "CRIM",
+      "number": "203",
+      "level": 200,
+      "rating": 4.39,
+      "difficulty": 2.36,
+      "reviews": 14,
+      "score": 5.367
+    },
+    {
+      "code": "ECON 392",
+      "dept": "ECON",
+      "number": "392",
+      "level": 300,
+      "rating": 4.54,
+      "difficulty": 2.79,
+      "reviews": 14,
+      "score": 5.366
+    },
+    {
+      "code": "ALC 099",
+      "dept": "ALC",
+      "number": "099",
+      "level": 0,
+      "rating": 4.45,
+      "difficulty": 2.62,
+      "reviews": 21,
+      "score": 5.362
+    },
+    {
+      "code": "ENGL 210",
+      "dept": "ENGL",
+      "number": "210",
+      "level": 200,
+      "rating": 4.58,
+      "difficulty": 2.92,
+      "reviews": 13,
+      "score": 5.357
+    },
+    {
+      "code": "ENGL 203",
+      "dept": "ENGL",
+      "number": "203",
+      "level": 200,
+      "rating": 4.57,
+      "difficulty": 3.07,
+      "reviews": 27,
+      "score": 5.347
+    },
+    {
+      "code": "EDUC 370",
+      "dept": "EDUC",
+      "number": "370",
+      "level": 300,
+      "rating": 4.37,
+      "difficulty": 2.4,
+      "reviews": 15,
+      "score": 5.336
+    },
+    {
+      "code": "POL 359",
+      "dept": "POL",
+      "number": "359",
+      "level": 300,
+      "rating": 4.4,
+      "difficulty": 2.6,
+      "reviews": 25,
+      "score": 5.334
+    },
+    {
+      "code": "HUM 130",
+      "dept": "HUM",
+      "number": "130",
+      "level": 100,
+      "rating": 4.16,
+      "difficulty": 2.54,
+      "reviews": 93,
+      "score": 5.321
+    },
+    {
+      "code": "CMPT 433",
+      "dept": "CMPT",
+      "number": "433",
+      "level": 400,
+      "rating": 4.75,
+      "difficulty": 3.5,
+      "reviews": 12,
+      "score": 5.32
+    },
+    {
+      "code": "STAT 240",
+      "dept": "STAT",
+      "number": "240",
+      "level": 200,
+      "rating": 4.56,
+      "difficulty": 3,
+      "reviews": 16,
+      "score": 5.32
+    },
+    {
+      "code": "ECON 110",
+      "dept": "ECON",
+      "number": "110",
+      "level": 100,
+      "rating": 4.28,
+      "difficulty": 2.25,
+      "reviews": 20,
+      "score": 5.318
+    },
+    {
+      "code": "PSYC 363",
+      "dept": "PSYC",
+      "number": "363",
+      "level": 300,
+      "rating": 4.21,
+      "difficulty": 2.55,
+      "reviews": 66,
+      "score": 5.315
+    },
+    {
+      "code": "GEO 111",
+      "dept": "GEO",
+      "number": "111",
+      "level": 100,
+      "rating": 4.46,
+      "difficulty": 2.71,
+      "reviews": 14,
+      "score": 5.314
+    },
+    {
+      "code": "ITAL 100",
+      "dept": "ITAL",
+      "number": "100",
+      "level": 100,
+      "rating": 4.37,
+      "difficulty": 2.71,
+      "reviews": 34,
+      "score": 5.299
+    },
+    {
+      "code": "STAT 271",
+      "dept": "STAT",
+      "number": "271",
+      "level": 200,
+      "rating": 4.64,
+      "difficulty": 3.27,
+      "reviews": 11,
+      "score": 5.287
+    },
+    {
+      "code": "KIN 205",
+      "dept": "KIN",
+      "number": "205",
+      "level": 200,
+      "rating": 4.52,
+      "difficulty": 3.12,
+      "reviews": 25,
+      "score": 5.272
+    },
+    {
+      "code": "CMNS 387",
+      "dept": "CMNS",
+      "number": "387",
+      "level": 300,
+      "rating": 4.46,
+      "difficulty": 2.83,
+      "reviews": 12,
+      "score": 5.265
+    },
+    {
+      "code": "POL 324",
+      "dept": "POL",
+      "number": "324",
+      "level": 300,
+      "rating": 4.55,
+      "difficulty": 3.16,
+      "reviews": 19,
+      "score": 5.265
+    },
+    {
+      "code": "HIST 319",
+      "dept": "HIST",
+      "number": "319",
+      "level": 300,
+      "rating": 4.44,
+      "difficulty": 2.92,
+      "reviews": 25,
+      "score": 5.262
+    },
+    {
+      "code": "FREN 222",
+      "dept": "FREN",
+      "number": "222",
+      "level": 200,
+      "rating": 4.54,
+      "difficulty": 3.08,
+      "reviews": 13,
+      "score": 5.261
+    },
+    {
+      "code": "POL 351",
+      "dept": "POL",
+      "number": "351",
+      "level": 300,
+      "rating": 4.46,
+      "difficulty": 2.93,
+      "reviews": 14,
+      "score": 5.237
+    },
+    {
+      "code": "ARCH 226",
+      "dept": "ARCH",
+      "number": "226",
+      "level": 200,
+      "rating": 4.17,
+      "difficulty": 2.37,
+      "reviews": 38,
+      "score": 5.233
+    },
+    {
+      "code": "BISC 326",
+      "dept": "BISC",
+      "number": "326",
+      "level": 300,
+      "rating": 4.4,
+      "difficulty": 2.86,
+      "reviews": 21,
+      "score": 5.228
+    },
+    {
+      "code": "HUM 230",
+      "dept": "HUM",
+      "number": "230",
+      "level": 200,
+      "rating": 4.35,
+      "difficulty": 2.6,
+      "reviews": 10,
+      "score": 5.227
+    },
+    {
+      "code": "ENSC 102",
+      "dept": "ENSC",
+      "number": "102",
+      "level": 100,
+      "rating": 4.1,
+      "difficulty": 1.9,
+      "reviews": 10,
+      "score": 5.222
+    },
+    {
+      "code": "ENG 306",
+      "dept": "ENG",
+      "number": "306",
+      "level": 300,
+      "rating": 4.31,
+      "difficulty": 2.54,
+      "reviews": 13,
+      "score": 5.22
+    },
+    {
+      "code": "MATH 302",
+      "dept": "MATH",
+      "number": "302",
+      "level": 300,
+      "rating": 4.5,
+      "difficulty": 3.09,
+      "reviews": 11,
+      "score": 5.21
+    },
+    {
+      "code": "BISC 313",
+      "dept": "BISC",
+      "number": "313",
+      "level": 300,
+      "rating": 4.38,
+      "difficulty": 3.03,
+      "reviews": 34,
+      "score": 5.197
+    },
+    {
+      "code": "EXPL 130",
+      "dept": "EXPL",
+      "number": "130",
+      "level": 100,
+      "rating": 4.22,
+      "difficulty": 2.38,
+      "reviews": 16,
+      "score": 5.197
+    },
+    {
+      "code": "MACM 204",
+      "dept": "MACM",
+      "number": "204",
+      "level": 200,
+      "rating": 4.37,
+      "difficulty": 2.93,
+      "reviews": 27,
+      "score": 5.196
+    },
+    {
+      "code": "BIO 202",
+      "dept": "BIO",
+      "number": "202",
+      "level": 200,
+      "rating": 4.46,
+      "difficulty": 3.19,
+      "reviews": 26,
+      "score": 5.191
+    },
+    {
+      "code": "HSCI 216",
+      "dept": "HSCI",
+      "number": "216",
+      "level": 200,
+      "rating": 4.13,
+      "difficulty": 2.86,
+      "reviews": 100,
+      "score": 5.179
+    },
+    {
+      "code": "KIN 241",
+      "dept": "KIN",
+      "number": "241",
+      "level": 200,
+      "rating": 4.39,
+      "difficulty": 3,
+      "reviews": 19,
+      "score": 5.161
+    },
+    {
+      "code": "ARCH 471",
+      "dept": "ARCH",
+      "number": "471",
+      "level": 400,
+      "rating": 4.5,
+      "difficulty": 3.36,
+      "reviews": 22,
+      "score": 5.156
+    },
+    {
+      "code": "GERO 420",
+      "dept": "GERO",
+      "number": "420",
+      "level": 400,
+      "rating": 4.3,
+      "difficulty": 2.73,
+      "reviews": 15,
+      "score": 5.151
+    },
+    {
+      "code": "MBB 420",
+      "dept": "MBB",
+      "number": "420",
+      "level": 400,
+      "rating": 4.25,
+      "difficulty": 2.6,
+      "reviews": 10,
+      "score": 5.127
+    },
+    {
+      "code": "HIST 135",
+      "dept": "HIST",
+      "number": "135",
+      "level": 100,
+      "rating": 4.09,
+      "difficulty": 2.3,
+      "reviews": 23,
+      "score": 5.121
+    },
+    {
+      "code": "HIST 486",
+      "dept": "HIST",
+      "number": "486",
+      "level": 400,
+      "rating": 4.34,
+      "difficulty": 3.07,
+      "reviews": 28,
+      "score": 5.121
+    },
+    {
+      "code": "KIN 340",
+      "dept": "KIN",
+      "number": "340",
+      "level": 300,
+      "rating": 4.09,
+      "difficulty": 2.18,
+      "reviews": 11,
+      "score": 5.118
+    },
+    {
+      "code": "FREN 210",
+      "dept": "FREN",
+      "number": "210",
+      "level": 200,
+      "rating": 4.14,
+      "difficulty": 2.45,
+      "reviews": 22,
+      "score": 5.115
+    },
+    {
+      "code": "ENSC 325",
+      "dept": "ENSC",
+      "number": "325",
+      "level": 300,
+      "rating": 4.15,
+      "difficulty": 2.57,
+      "reviews": 30,
+      "score": 5.113
+    },
+    {
+      "code": "PHYS 131",
+      "dept": "PHYS",
+      "number": "131",
+      "level": 100,
+      "rating": 4.12,
+      "difficulty": 2.35,
+      "reviews": 17,
+      "score": 5.111
+    },
+    {
+      "code": "ARCH 344",
+      "dept": "ARCH",
+      "number": "344",
+      "level": 300,
+      "rating": 4.06,
+      "difficulty": 2.44,
+      "reviews": 41,
+      "score": 5.11
+    },
+    {
+      "code": "BISC 205",
+      "dept": "BISC",
+      "number": "205",
+      "level": 200,
+      "rating": 4.23,
+      "difficulty": 2.86,
+      "reviews": 35,
+      "score": 5.11
+    },
+    {
+      "code": "ENG 342",
+      "dept": "ENG",
+      "number": "342",
+      "level": 300,
+      "rating": 4.21,
+      "difficulty": 2.58,
+      "reviews": 12,
+      "score": 5.102
+    },
+    {
+      "code": "ARCH 285",
+      "dept": "ARCH",
+      "number": "285",
+      "level": 200,
+      "rating": 4.1,
+      "difficulty": 2.3,
+      "reviews": 10,
+      "score": 5.083
+    }
+  ]
+}
