@@ -185,6 +185,9 @@ export interface SchedulerPreferences {
   minCredits: number;
   // Ideal credit load (e.g. 9/12/15); solutions are ranked by closeness to it.
   creditTarget: number;
+  // How many known-good electives to include; caps electives and is rewarded
+  // when matched exactly.
+  electiveCount: number;
   preferredTimeStart: string;
   preferredTimeEnd: string;
   avoidDays: string[];

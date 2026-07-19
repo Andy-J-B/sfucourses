@@ -16,6 +16,7 @@ interface PreferenceFormProps {
 const DAYS = ["Mo", "Tu", "We", "Th", "Fr"];
 const CAMPUSES = ["Burnaby", "Surrey", "Vancouver"];
 const CREDIT_TARGETS = [9, 12, 15];
+const ELECTIVE_COUNTS = [0, 1, 2, 3];
 const MAX_ANCHORS = 5;
 
 function detectMajors(courses: CompletedCourse[]): string[] {
@@ -57,6 +58,7 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
   });
   const [major, setMajor] = useState("");
   const [creditTarget, setCreditTarget] = useState(15);
+  const [electiveCount, setElectiveCount] = useState(1);
   const [maxCredits, setMaxCredits] = useState(15);
   const [minCredits, setMinCredits] = useState(9);
   const [preferredTimeStart, setPreferredTimeStart] = useState("09:00");
@@ -210,6 +212,7 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
       maxCredits,
       minCredits,
       creditTarget,
+      electiveCount,
       preferredTimeStart,
       preferredTimeEnd,
       avoidDays,
@@ -338,6 +341,26 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="preference-form__field">
+            <label>Electives to include</label>
+            <div className="preference-form__term-selector">
+              {ELECTIVE_COUNTS.map((n) => (
+                <button
+                  key={n}
+                  className={`term-btn ${
+                    electiveCount === n ? "term-btn--active" : ""
+                  }`}
+                  onClick={() => setElectiveCount(n)}
+                >
+                  {n === 0 ? "None" : n}
+                </button>
+              ))}
+            </div>
+            <p className="preference-form__hint">
+              High-rated, easier non-major courses to round out your schedule.
+            </p>
           </div>
 
           <div className="preference-form__field">
