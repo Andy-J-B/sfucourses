@@ -13,6 +13,7 @@ import {
   OutlineLite,
 } from "./poolBuilder";
 import { scoreSolution } from "./scorer";
+import { solveCsp } from "./solver";
 import { solveSchedules } from "./index";
 
 function makeSection(
@@ -67,6 +68,7 @@ const basePrefs: SchedulerPreferences = {
   maxCredits: 15,
   minCredits: 3,
   creditTarget: 15,
+  electiveCount: 2,
   preferredTimeStart: "09:00",
   preferredTimeEnd: "18:00",
   avoidDays: [],
@@ -466,5 +468,147 @@ describe("solveSchedules (end-to-end CSP)", () => {
     for (const s of schedules) {
       expect(s.courses.length).toBeLessThanOrEqual(2);
     }
+  });
+});
+
+describe("elective count", () => {
+  const lecOn = (dept: string, num: string, day: string) =>
+    makeCourse(dept, num, "3", [
+      makeSection("D100", "LEC", day, "10:30", "11:20"),
+    ]);
+
+  it("caps the number of electives at electiveCount", async () => {
+    const courseMap = {
+      "CMPT 225": lecOn("CMPT", "225", "Mo"),
+      "ENGL 105": lecOn("ENGL", "105", "Tu"),
+      "PHIL 120": lecOn("PHIL", "120", "We"),
+      "HIST 101": lecOn("HIST", "101", "Th"),
+    };
+    const prefs = {
+      ...basePrefs,
+      electiveCount: 1,
+      minCredits: 3,
+      creditTarget: 6,
+      maxCredits: 12,
+    };
+    const { courses } = await poolFrom(
+      [
+        {
+          code: "CMPT 225",
+          dept: "CMPT",
+          number: "225",
+          units: 3,
+          role: "anchor",
+        },
+        {
+          code: "ENGL 105",
+          dept: "ENGL",
+          number: "105",
+          units: 3,
+          role: "elective",
+        },
+        {
+          code: "PHIL 120",
+          dept: "PHIL",
+          number: "120",
+          units: 3,
+          role: "elective",
+        },
+        {
+          code: "HIST 101",
+          dept: "HIST",
+          number: "101",
+          units: 3,
+          role: "elective",
+        },
+      ],
+      courseMap,
+      prefs
+    );
+    const sols = solveCsp(courses, prefs);
+    expect(sols.length).toBeGreaterThan(0);
+    for (const s of sols) {
+      const electives = s.assignments.filter(
+        (a) => a.course.role === "elective"
+      ).length;
+      expect(electives).toBe(1);
+    }
+  });
+
+  it("includes no electives when electiveCount is 0", async () => {
+    const courseMap = {
+      "CMPT 225": lecOn("CMPT", "225", "Mo"),
+      "CMPT 301": lecOn("CMPT", "301", "Tu"),
+      "ENGL 105": lecOn("ENGL", "105", "We"),
+    };
+    const prefs = {
+      ...basePrefs,
+      electiveCount: 0,
+      minCredits: 3,
+      creditTarget: 6,
+      maxCredits: 6,
+    };
+    const { courses } = await poolFrom(
+      [
+        {
+          code: "CMPT 225",
+          dept: "CMPT",
+          number: "225",
+          units: 3,
+          role: "anchor",
+        },
+        {
+          code: "CMPT 301",
+          dept: "CMPT",
+          number: "301",
+          units: 3,
+          role: "major",
+        },
+        {
+          code: "ENGL 105",
+          dept: "ENGL",
+          number: "105",
+          units: 3,
+          role: "elective",
+        },
+      ],
+      courseMap,
+      prefs
+    );
+    const sols = solveCsp(courses, prefs);
+    expect(sols.length).toBeGreaterThan(0);
+    for (const s of sols) {
+      const electives = s.assignments.filter(
+        (a) => a.course.role === "elective"
+      ).length;
+      expect(electives).toBe(0);
+    }
+  });
+});
+
+describe("curated electives", () => {
+  it("ranks curated electives ahead of higher live-score non-curated ones", () => {
+    const outlines: OutlineLite[] = [
+      { dept: "CMPT", number: "307", units: 3, title: "" },
+      { dept: "ENGL", number: "105", units: 3, title: "" },
+      { dept: "PHIL", number: "120", units: 3, title: "" },
+    ];
+    const pool = selectCandidatePool({
+      anchors: ["CMPT 307"],
+      major: "CMPT",
+      completed: new Set(),
+      level: 300,
+      outlines,
+      // PHIL has the better live score, but ENGL is curated and should win.
+      courseQuality: (code) =>
+        code === "PHIL 120"
+          ? { rating: 5, reviews: 500 }
+          : { rating: 2, reviews: 5 },
+      curatedElectives: ["ENGL 105"],
+    });
+    const electives = pool
+      .filter((c) => c.role === "elective")
+      .map((c) => c.code);
+    expect(electives[0]).toBe("ENGL 105");
   });
 });
