@@ -13,7 +13,6 @@ import toast from "react-hot-toast";
 import Button from "./Button";
 import { mergeOverlappingBlocks } from "@utils/timeBlocks";
 import { isMobile } from "@utils/deviceDetection";
-import { ScheduleInsights } from "./ScheduleInsights";
 
 interface Course {
   id: string;
@@ -745,8 +744,6 @@ export const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
           </div>
         ))}
       </div>
-
-      <ScheduleInsights coursesWithSections={coursesWithSections} />
     </div>
   );
 };
