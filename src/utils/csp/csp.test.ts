@@ -7,11 +7,12 @@ import {
 import { sectionToSlots, slotsConflict } from "./overlap";
 import { buildRmpIndex, NEUTRAL_QUALITY } from "./rmp";
 import {
-  buildCourseVariables,
+  buildCoursePackages,
   buildCspPool,
   selectCandidatePool,
   OutlineLite,
 } from "./poolBuilder";
+import { scoreSolution } from "./scorer";
 import { solveSchedules } from "./index";
 
 function makeSection(
@@ -147,34 +148,55 @@ describe("selectCandidatePool", () => {
   });
 });
 
-describe("buildCourseVariables", () => {
-  it("groups sections by section code (LEC vs TUT)", () => {
+describe("buildCoursePackages", () => {
+  it("pairs a single lecture with each of its tutorials", () => {
     const course = makeCourse("CMPT", "225", "3", [
       makeSection("D100", "LEC", "Mo,We", "10:30", "11:20"),
       makeSection("D101", "TUT", "Fr", "12:30", "13:20"),
       makeSection("D102", "TUT", "Fr", "14:30", "15:20"),
     ]);
-    const { variables, feasible } = buildCourseVariables(
+    const { packages, feasible } = buildCoursePackages(
       course,
       basePrefs,
       rmpEmpty
     );
     expect(feasible).toBe(true);
-    expect(variables).toHaveLength(2);
-    const tut = variables.find((v) => v.groupCode === "TUT");
-    expect(tut?.domain).toHaveLength(2);
+    expect(packages).toHaveLength(2); // D100+D101, D100+D102
+    for (const p of packages) {
+      const codes = p.values.map((v) => v.section.section);
+      expect(codes).toContain("D100");
+      expect(codes).toHaveLength(2);
+    }
   });
 
-  it("prunes sections on avoided days", () => {
+  it("never pairs a lecture with another lecture's tutorial", () => {
+    const course = makeCourse("CMPT", "225", "3", [
+      makeSection("D100", "LEC", "Mo", "10:30", "11:20"),
+      makeSection("D101", "TUT", "Tu", "10:30", "11:20"),
+      makeSection("D200", "LEC", "We", "10:30", "11:20"),
+      makeSection("D201", "TUT", "Th", "10:30", "11:20"),
+    ]);
+    const { packages } = buildCoursePackages(course, basePrefs, rmpEmpty);
+    const pairs = packages
+      .map((p) =>
+        p.values
+          .map((v) => v.section.section)
+          .sort()
+          .join("+")
+      )
+      .sort();
+    expect(pairs).toEqual(["D100+D101", "D200+D201"]);
+  });
+
+  it("drops an association group whose required component is pruned away", () => {
     const course = makeCourse("CMPT", "225", "3", [
       makeSection("D100", "LEC", "Mo", "10:30", "11:20"),
       makeSection("D200", "LEC", "Fr", "10:30", "11:20"),
     ]);
     const prefs = { ...basePrefs, avoidDays: ["Fr"] };
-    const { variables } = buildCourseVariables(course, prefs, rmpEmpty);
-    const lec = variables.find((v) => v.groupCode === "LEC");
-    expect(lec?.domain).toHaveLength(1);
-    expect(lec?.domain[0].section.section).toBe("D100");
+    const { packages } = buildCoursePackages(course, prefs, rmpEmpty);
+    expect(packages).toHaveLength(1);
+    expect(packages[0].values[0].section.section).toBe("D100");
   });
 
   it("marks a course infeasible when campus filter empties a required group", () => {
@@ -182,8 +204,36 @@ describe("buildCourseVariables", () => {
       makeSection("D100", "LEC", "Mo", "10:30", "11:20", "Surrey"),
     ]);
     const prefs = { ...basePrefs, campusPreferences: ["Burnaby"] };
-    const { feasible } = buildCourseVariables(course, prefs, rmpEmpty);
+    const { feasible } = buildCoursePackages(course, prefs, rmpEmpty);
     expect(feasible).toBe(false);
+  });
+});
+
+describe("scorer", () => {
+  it("flags a class ending after preferredEnd as outside preferred hours", () => {
+    const solution = {
+      totalCredits: 3,
+      assignments: [
+        {
+          course: { role: "anchor" } as any,
+          values: [
+            {
+              section: {} as any,
+              slots: [],
+              campuses: ["Burnaby"],
+              rmpQuality: 3,
+              rmpConfidence: 0,
+              hasRmp: false,
+            },
+          ],
+          // 17:30–20:20: starts within 09:00–18:00 but ends well after.
+          slots: [{ day: "Mo", start: 17 * 60 + 30, end: 20 * 60 + 20 }],
+        },
+      ],
+    };
+    const res = scoreSolution(solution as any, basePrefs);
+    expect(res.tags).not.toContain("within-preferred-hours");
+    expect(res.reasoning).toContain("outside preferred hours");
   });
 });
 
@@ -217,6 +267,15 @@ describe("rmp", () => {
     );
     expect(q.hasRmp).toBe(true);
     expect(q.quality).toBeCloseTo(4.5);
+  });
+
+  it("degrades gracefully on a non-array review payload", () => {
+    const idx = buildRmpIndex({ error: "boom" } as any, { data: [] } as any);
+    const q = idx.sectionQuality(
+      makeSection("D100", "LEC", "Mo", "10:30", "11:20", "Burnaby", "Jane Doe")
+    );
+    expect(q.hasRmp).toBe(false);
+    expect(idx.courseQuality("CMPT 225")).toEqual({ rating: 0, reviews: 0 });
   });
 });
 
