@@ -1,12 +1,11 @@
 import { useState, useCallback } from "react";
-import { useRouter } from "next/router";
+import Link from "next/link";
 import {
   TranscriptUpload,
   PreferenceForm,
   ScheduleResults,
   WeeklySchedule,
   ScheduleInsights,
-  Button,
 } from "@components";
 import {
   useSchedulerStore,
@@ -20,7 +19,6 @@ import toast from "react-hot-toast";
 type Step = "transcript" | "preferences" | "results";
 
 const SchedulerPage = () => {
-  const router = useRouter();
   const [step, setStep] = useState<Step>("transcript");
   const {
     completedCourses,
@@ -142,21 +140,16 @@ const SchedulerPage = () => {
                 <ScheduleInsights
                   coursesWithSections={selectedSchedule.courses}
                 />
-                <Button
-                  label="Open in Schedule Planner"
-                  className="scheduler-page__open-schedule"
-                  onClick={() => {
-                    const classNums = selectedSchedule.courses.flatMap((c) =>
-                      c.sections.map((s) => s.classNumber)
-                    );
-                    const termShort = preferences
-                      ? toShortenedTerm(preferences.term)
-                      : "";
-                    router.push(
-                      `/schedule?term=${termShort}&courses=${classNums.join("-")}`
-                    );
-                  }}
-                />
+                <Link
+                  className="btn primary scheduler-page__open-schedule"
+                  href={`/schedule?term=${
+                    preferences ? toShortenedTerm(preferences.term) : ""
+                  }&courses=${selectedSchedule.courses
+                    .flatMap((c) => c.sections.map((s) => s.classNumber))
+                    .join("-")}`}
+                >
+                  Open in Schedule Planner
+                </Link>
               </>
             ) : (
               <div className="scheduler-page__empty-preview">
