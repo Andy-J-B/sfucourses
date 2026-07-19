@@ -25,8 +25,13 @@ export function buildRmpIndex(
   instructorReviews: InstructorReviewSummary[] | undefined,
   courseReviews: CourseReviewSummary[] | undefined
 ): RmpIndex {
+  // A 200 response with a non-array body (backend shape change, error object)
+  // must degrade gracefully rather than throw when iterated.
+  const instructors = Array.isArray(instructorReviews) ? instructorReviews : [];
+  const courses = Array.isArray(courseReviews) ? courseReviews : [];
+
   const courseMap = new Map<string, CourseReviewSummary>();
-  for (const c of courseReviews || []) {
+  for (const c of courses) {
     courseMap.set(c.course_code.toUpperCase().replace(/\s+/g, " "), c);
   }
 
@@ -35,7 +40,7 @@ export function buildRmpIndex(
       // A section can list multiple instructors; take the best-rated match.
       let best: { quality: number; confidence: number } | null = null;
       for (const inst of section.instructors || []) {
-        const match = getInstructorReviewData(inst.name, instructorReviews);
+        const match = getInstructorReviewData(inst.name, instructors);
         if (!match) continue;
         const quality = parseFloat(match.Quality);
         const ratings = parseInt(match.Ratings) || 0;
