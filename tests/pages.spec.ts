@@ -8,6 +8,7 @@ const pages = [
   "/graph",
   "/degree",
   "/schedule",
+  "/scheduler",
 ];
 
 for (const page of pages) {
