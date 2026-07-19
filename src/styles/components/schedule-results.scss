@@ -141,10 +141,21 @@
 
 .course-chip {
   padding: 0.25rem 0.5rem;
-  background: var(--colour-neutral-100);
+  background: var(--colour-neutral-1100);
+  border: 1px solid var(--colour-neutral-900);
   border-radius: 0.25rem;
   font-size: 0.75rem;
   font-weight: 500;
+  color: var(--colour-neutral-300);
+}
+
+.schedule-results__tags .text-badge {
+  background: var(--colour-neutral-1100);
+  color: var(--colour-neutral-300);
+  font-size: 0.7rem;
+  padding: 0.2rem 0.6rem;
+  height: auto;
+  border: 1px solid var(--colour-neutral-900);
 }
 
 @keyframes spin {
