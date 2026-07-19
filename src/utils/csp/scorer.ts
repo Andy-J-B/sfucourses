@@ -114,11 +114,19 @@ export function scoreSolution(
     tags.push("prof-ratings-unavailable");
   }
 
-  // Elective-balance signal.
-  const hasElective = solution.assignments.some(
+  // Reward matching the requested number of electives.
+  const electiveN = solution.assignments.filter(
     (a) => a.course.role === "elective"
-  );
-  if (hasElective) tags.push("includes-electives");
+  ).length;
+  const electiveGap = Math.abs(electiveN - preferences.electiveCount);
+  if (electiveGap > 0) {
+    score -= electiveGap * 6;
+    reasoning.push(
+      `${electiveN} elective(s), wanted ${preferences.electiveCount}`
+    );
+  } else if (electiveN > 0) {
+    tags.push(`${electiveN} elective${electiveN > 1 ? "s" : ""}`);
+  }
 
   score = Math.max(0, Math.min(100, Math.round(score)));
   return { score, label: label(score), tags, reasoning: reasoning.join("; ") };

@@ -47,6 +47,7 @@ export function selectCandidatePool(params: {
   level: number;
   outlines: OutlineLite[];
   courseQuality: (code: string) => { rating: number; reviews: number };
+  curatedElectives?: string[]; // ordered best-first "known-good" codes
   maxPool?: number;
 }): CandidateCourse[] {
   const maxPool = params.maxPool ?? DEFAULT_MAX_POOL;
@@ -55,6 +56,12 @@ export function selectCandidatePool(params: {
 
   const anchorCodes = Array.from(new Set(params.anchors.map(normalizeCode)));
   const anchorSet = new Set(anchorCodes);
+
+  // Rank of each curated elective (lower = better); non-curated fall back to
+  // live review score.
+  const curatedRank = new Map(
+    (params.curatedElectives ?? []).map((c, i) => [normalizeCode(c), i])
+  );
 
   const outlineByCode = new Map<string, OutlineLite>();
   for (const o of params.outlines) {
@@ -96,8 +103,8 @@ export function selectCandidatePool(params: {
       role: "major" as CourseRole,
     }));
 
-  // Electives: cross-dept, level-appropriate, ranked by course review quality
-  // weighted by review volume.
+  // Electives: cross-dept, level-appropriate. Curated "known-good" courses rank
+  // first (in curated order); the rest fall back to live course-review quality.
   const electiveCandidates: CandidateCourse[] = params.outlines
     .filter((o) => o.dept.toUpperCase() !== major)
     .filter((o) => courseLevel(o.number) >= 100)
@@ -113,10 +120,14 @@ export function selectCandidatePool(params: {
           units: o.units,
           role: "elective" as CourseRole,
         },
+        curatedRank: curatedRank.get(code) ?? Infinity,
         score: q.rating * Math.log2(q.reviews + 2),
       };
     })
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => {
+      if (a.curatedRank !== b.curatedRank) return a.curatedRank - b.curatedRank;
+      return b.score - a.score;
+    })
     .map((x) => x.candidate);
 
   // Compose within the pool budget, guaranteeing elective headroom.

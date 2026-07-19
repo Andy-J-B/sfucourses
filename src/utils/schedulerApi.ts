@@ -20,6 +20,9 @@ import {
   selectCandidatePool,
   solveSchedules,
 } from "./csp";
+import curatedElectivesData from "../data/curatedElectives.json";
+
+const CURATED_ELECTIVES = curatedElectivesData.electives.map((e) => e.code);
 
 export type { ParsedCourse, SchedulerPreferences };
 
@@ -141,6 +144,7 @@ export async function generateSchedules(
     level,
     outlines,
     courseQuality: (code) => rmp.courseQuality(code),
+    curatedElectives: CURATED_ELECTIVES,
   });
 
   const fetchSections = async (dept: string, number: string) => {
