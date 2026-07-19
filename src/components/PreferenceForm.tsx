@@ -6,6 +6,7 @@ import Button from "./Button";
 import toast from "react-hot-toast";
 import { useSchedulerStore, CompletedCourse } from "@store/useSchedulerStore";
 import { SchedulerPreferences } from "@types";
+import { recommendCreditLoad } from "@utils/transcript/academicProfile";
 
 interface PreferenceFormProps {
   onComplete: (preferences: SchedulerPreferences) => void;
@@ -70,6 +71,8 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
   ]);
   const [outlineOptions, setOutlineOptions] = useState<OutlineOption[]>([]);
   const [suggestionsApplied, setSuggestionsApplied] = useState(false);
+  const [loadHint, setLoadHint] = useState<string | null>(null);
+  const [loadApplied, setLoadApplied] = useState(false);
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -105,6 +108,19 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
     const detected = detectMajors(completedCourses)[0];
     if (detected) setMajor(detected);
   }, [completedCourses, major]);
+
+  // Pre-fill a recommended credit load from GPA / recent performance. This is a
+  // soft default — the student can still pick any load below.
+  useEffect(() => {
+    if (loadApplied || completedCourses.length === 0) return;
+    const rec = recommendCreditLoad(completedCourses);
+    if (rec) {
+      setCreditTarget(rec.credits);
+      setMaxCredits(rec.credits);
+      setLoadHint(`Suggested ${rec.credits} credits (${rec.reason}).`);
+    }
+    setLoadApplied(true);
+  }, [completedCourses, loadApplied]);
 
   // Suggest anchor courses from the detected major + level, restricted to
   // courses actually offered in the selected term (checked against /sections).
@@ -341,6 +357,7 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
                 </button>
               ))}
             </div>
+            {loadHint && <p className="preference-form__hint">{loadHint}</p>}
           </div>
 
           <div className="preference-form__field">
