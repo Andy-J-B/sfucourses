@@ -51,7 +51,10 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
   const detectedMajorLabel = useSchedulerStore((s) => s.detectedMajor);
   const [subStep, setSubStep] = useState<1 | 2>(1);
   const [desiredCourses, setDesiredCourses] = useState<string[]>([""]);
-  const [term, setTerm] = useState(() => getCurrentAndNextTerm()[0]);
+  const [term, setTerm] = useState(() => {
+    const terms = getCurrentAndNextTerm();
+    return terms[terms.length - 1];
+  });
   const [major, setMajor] = useState("");
   const [creditTarget, setCreditTarget] = useState(15);
   const [maxCredits, setMaxCredits] = useState(15);
