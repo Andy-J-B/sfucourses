@@ -183,6 +183,17 @@ export async function generateSchedules(
     );
   }
 
+  // Anchors are mandatory; if their combined units already exceed the credit
+  // cap, no schedule can include them all — say so instead of blaming conflicts.
+  const anchorUnits = pool
+    .filter((c) => c.role === "anchor")
+    .reduce((sum, c) => sum + c.units, 0);
+  if (anchorUnits > preferences.maxCredits) {
+    throw new Error(
+      `Your anchor courses total ${anchorUnits} credits, above your ${preferences.maxCredits}-credit maximum. Raise max credits or remove an anchor.`
+    );
+  }
+
   const schedules = solveSchedules(pool, preferences);
 
   if (schedules.length === 0) {
