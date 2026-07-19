@@ -1,6 +1,12 @@
 import { CourseWithSectionDetails, SchedulerPreferences } from "@types";
-import { CspCourse, CspVariable, CourseRole, CspDiagnostics } from "./types";
-import { sectionCampuses, sectionToSlots } from "./overlap";
+import {
+  CspCourse,
+  CspPackage,
+  CspSectionValue,
+  CourseRole,
+  CspDiagnostics,
+} from "./types";
+import { sectionCampuses, sectionToSlots, slotsConflict } from "./overlap";
 import { RmpIndex } from "./rmp";
 
 export const DEFAULT_MAX_POOL = 22;
@@ -126,23 +132,56 @@ export function selectCandidatePool(params: {
   return [...anchors, ...majors, ...electives];
 }
 
-// Apply unary constraints (avoid-days, campus) to a course's sections and group
-// them into CSP variables. Returns null domains when a required group is wiped
-// out — meaning the course cannot satisfy the preferences and must be excluded.
-export function buildCourseVariables(
+// SFU groups a lecture with its tutorials/labs by the hundreds digit of the
+// section code: lecture D100 ↔ tutorials D101..D199, lecture D200 ↔ D2xx. The
+// data has no explicit associatedClass field, so this prefix is the best signal
+// for which sections must be taken together.
+function associationKey(sectionName: string): string {
+  const m = sectionName.match(/^([A-Za-z]*)(\d+)/);
+  if (!m) return sectionName;
+  const [, prefix, num] = m;
+  return `${prefix}${Math.floor((parseInt(num) || 0) / 100)}`;
+}
+
+function hasInternalConflict(values: CspSectionValue[]): boolean {
+  for (let i = 0; i < values.length; i++) {
+    for (let j = i + 1; j < values.length; j++) {
+      if (slotsConflict(values[i].slots, values[j].slots)) return true;
+    }
+  }
+  return false;
+}
+
+// Apply unary constraints (avoid-days, campus) then build the course's
+// enrollable packages: within each association group, take one section per
+// component type (LEC + TUT + LAB). This guarantees a lecture is only ever
+// paired with its own tutorials/labs. A group whose pruning wiped out a
+// required component yields no package; a course with no packages is infeasible.
+export function buildCoursePackages(
   course: CourseWithSectionDetails,
   preferences: SchedulerPreferences,
   rmp: RmpIndex
-): { variables: CspVariable[]; feasible: boolean } {
+): { packages: CspPackage[]; feasible: boolean } {
   const avoid = new Set(preferences.avoidDays);
   const campusPrefs = preferences.campusPreferences.map((c) => c.toLowerCase());
-  const courseKey = normalizeCode(`${course.dept} ${course.number}`);
 
-  const groups = new Map<string, CspVariable>();
+  // association group -> { required component types, surviving sections }
+  const groups = new Map<
+    string,
+    { required: Set<string>; byComponent: Map<string, CspSectionValue[]> }
+  >();
+
   for (const section of course.sections) {
+    const groupCode = section.schedules[0]?.sectionCode || "OTHER";
+    const assoc = associationKey(section.section);
+    if (!groups.has(assoc)) {
+      groups.set(assoc, { required: new Set(), byComponent: new Map() });
+    }
+    const info = groups.get(assoc)!;
+    info.required.add(groupCode);
+
     const slots = sectionToSlots(section);
     const campuses = sectionCampuses(section);
-
     // Unary: drop sections meeting on avoided days.
     if (slots.some((s) => avoid.has(s.day))) continue;
     // Unary: drop sections whose campus is outside the preferred set.
@@ -156,10 +195,8 @@ export function buildCourseVariables(
       continue;
     }
 
-    const groupCode = section.schedules[0]?.sectionCode || "OTHER";
-    const key = `${courseKey}::${groupCode}`;
     const quality = rmp.sectionQuality(section);
-    const value = {
+    const value: CspSectionValue = {
       section,
       slots,
       campuses,
@@ -167,16 +204,34 @@ export function buildCourseVariables(
       rmpConfidence: quality.confidence,
       hasRmp: quality.hasRmp,
     };
-    const existing = groups.get(groupCode);
-    if (existing) existing.domain.push(value);
-    else groups.set(groupCode, { key, groupCode, domain: [value] });
+    if (!info.byComponent.has(groupCode)) info.byComponent.set(groupCode, []);
+    info.byComponent.get(groupCode)!.push(value);
   }
 
-  const variables = Array.from(groups.values());
-  // Feasible only if every discovered group still has at least one section.
-  const feasible =
-    variables.length > 0 && variables.every((v) => v.domain.length > 0);
-  return { variables, feasible };
+  const packages: CspPackage[] = [];
+  for (const info of groups.values()) {
+    const components = Array.from(info.required);
+    // Skip a group where pruning removed every section of a required component.
+    if (components.some((c) => (info.byComponent.get(c)?.length ?? 0) === 0)) {
+      continue;
+    }
+    // Cartesian product across component types within this association group.
+    let combos: CspSectionValue[][] = [[]];
+    for (const component of components) {
+      const domain = info.byComponent.get(component)!;
+      const next: CspSectionValue[][] = [];
+      for (const combo of combos) {
+        for (const value of domain) next.push([...combo, value]);
+      }
+      combos = next;
+    }
+    for (const combo of combos) {
+      if (hasInternalConflict(combo)) continue;
+      packages.push({ values: combo, slots: combo.flatMap((v) => v.slots) });
+    }
+  }
+
+  return { packages, feasible: packages.length > 0 };
 }
 
 export type FetchSections = (
@@ -215,7 +270,7 @@ export async function buildCspPool(params: {
       if (cand.role === "anchor") anchorsNotOffered.push(cand.code);
       continue;
     }
-    const { variables, feasible } = buildCourseVariables(
+    const { packages, feasible } = buildCoursePackages(
       course,
       preferences,
       rmp
@@ -226,14 +281,14 @@ export async function buildCspPool(params: {
     }
     const bestQuality = Math.max(
       0,
-      ...variables.flatMap((v) => v.domain.map((d) => d.rmpQuality))
+      ...packages.flatMap((p) => p.values.map((v) => v.rmpQuality))
     );
     courses.push({
       courseKey: cand.code,
       course,
       role: cand.role,
       units: parseFloat(course.units) || cand.units || 3,
-      variables,
+      packages,
       rmpQuality: bestQuality,
       reviewCount: rmp.courseQuality(cand.code).reviews,
     });

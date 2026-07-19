@@ -4,7 +4,6 @@ import {
   CspCourse,
   CspSectionValue,
   CspSolution,
-  CspVariable,
   MinuteSlot,
 } from "./types";
 import { slotsConflict } from "./overlap";
@@ -12,41 +11,19 @@ import { slotsConflict } from "./overlap";
 const NODE_BUDGET = 2_000_000;
 const SOLUTION_CAP = 400;
 
-// Enumerate the conflict-free ways to assign one section per group of a course,
-// given the slots already committed by other courses. Uses incremental
-// forward-checking (a partial combo that conflicts is abandoned immediately)
-// and MRV variable ordering (smallest domain first) to prune early.
+// The enrollable packages of a course that don't collide with the slots already
+// committed by other courses. Association-valid combinations (lecture + its own
+// tutorials/labs) are precomputed in the pool builder, so this is a simple
+// forward-checking filter.
 function courseAssignments(
   course: CspCourse,
   committed: MinuteSlot[]
 ): { values: CspSectionValue[]; slots: MinuteSlot[] }[] {
-  const vars = [...course.variables].sort(
-    (a, b) => a.domain.length - b.domain.length
-  );
   const out: { values: CspSectionValue[]; slots: MinuteSlot[] }[] = [];
-
-  const recurse = (
-    vi: number,
-    pickedValues: CspSectionValue[],
-    pickedSlots: MinuteSlot[]
-  ) => {
-    if (vi === vars.length) {
-      out.push({ values: [...pickedValues], slots: [...pickedSlots] });
-      return;
-    }
-    const variable: CspVariable = vars[vi];
-    for (const value of variable.domain) {
-      if (slotsConflict(value.slots, committed)) continue;
-      if (slotsConflict(value.slots, pickedSlots)) continue;
-      pickedValues.push(value);
-      pickedSlots.push(...value.slots);
-      recurse(vi + 1, pickedValues, pickedSlots);
-      pickedValues.pop();
-      pickedSlots.length -= value.slots.length;
-    }
-  };
-
-  recurse(0, [], []);
+  for (const pkg of course.packages) {
+    if (slotsConflict(pkg.slots, committed)) continue;
+    out.push({ values: pkg.values, slots: pkg.slots });
+  }
   return out;
 }
 

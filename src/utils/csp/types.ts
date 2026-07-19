@@ -22,13 +22,13 @@ export interface CspSectionValue {
   hasRmp: boolean;
 }
 
-// One CSP variable = a required section group within a course (LEC / TUT / LAB).
-// A course with a lecture and a lab yields two variables that must both be
-// assigned when the course is included.
-export interface CspVariable {
-  key: string; // "CMPT 225::LEC"
-  groupCode: string; // "LEC"
-  domain: CspSectionValue[];
+// One enrollable option for a course: a lecture plus its associated
+// tutorial/lab sections (one per component, all from the same association
+// group), with meeting times merged. Packages are precomputed so the solver
+// never pairs a lecture with a tutorial that belongs to a different lecture.
+export interface CspPackage {
+  values: CspSectionValue[]; // one section per component in the group
+  slots: MinuteSlot[];
 }
 
 // A candidate course in the expanded pool. Course *inclusion* is itself a
@@ -38,14 +38,14 @@ export interface CspCourse {
   course: CourseWithSectionDetails;
   role: CourseRole;
   units: number;
-  variables: CspVariable[];
+  packages: CspPackage[];
   rmpQuality: number; // best section quality, for pool ranking
   reviewCount: number;
 }
 
 export interface CspAssignment {
   course: CspCourse;
-  values: CspSectionValue[]; // one chosen section per variable/group
+  values: CspSectionValue[]; // the sections of the chosen enrollable package
   slots: MinuteSlot[];
 }
 
