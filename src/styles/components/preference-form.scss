@@ -100,10 +100,11 @@
     border-radius: 50%;
     cursor: pointer;
     font-size: 1.25rem;
-    color: white;
+    color: var(--colour-neutral-1200);
 
     &:hover {
       background: var(--colour-red-400);
+      color: white;
     }
   }
 

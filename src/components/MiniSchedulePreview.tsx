@@ -77,7 +77,7 @@ export const MiniSchedulePreview: React.FC<MiniSchedulePreviewProps> = ({
             : "";
 
           blocks.push({
-            id: `${course.dept}${course.number}-${section.section}-${day}`,
+            id: `${course.dept}${course.number}-${section.classNumber}-${day}-${blocks.length}`,
             label: `${course.dept} ${course.number}${
               campusShort ? ` ${campusShort}` : ""
             }`,
