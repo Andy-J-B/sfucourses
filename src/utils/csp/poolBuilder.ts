@@ -1,4 +1,9 @@
-import { CourseWithSectionDetails, SchedulerPreferences } from "@types";
+import {
+  CourseWithSectionDetails,
+  PrereqMap,
+  PrereqNode,
+  SchedulerPreferences,
+} from "@types";
 import {
   CspCourse,
   CspPackage,
@@ -37,6 +42,31 @@ function courseLevel(number: string): number {
   return Math.floor((parseInt(number) || 0) / 100) * 100;
 }
 
+// Walk a prerequisite expression tree and return true if the student has
+// satisfied it. Special tokens (UNITS:*, PERMISSION:*, COREQUISITE:*) are
+// treated as unsatisfied — the scheduler can't verify them from a transcript.
+function prereqSatisfied(node: PrereqNode, completed: Set<string>): boolean {
+  switch (node.type) {
+    case "course":
+      if (node.id.startsWith("UNITS:")) return false;
+      if (node.id.startsWith("PERMISSION:")) return false;
+      if (node.id.startsWith("COREQUISITE:"))
+        return completed.has(node.id.slice(12));
+      return completed.has(node.id);
+    case "and":
+      return node.children.every((c) => prereqSatisfied(c, completed));
+    case "or":
+      return node.children.some((c) => prereqSatisfied(c, completed));
+    default:
+      return false;
+  }
+}
+
+export interface SelectCandidatePoolResult {
+  candidates: CandidateCourse[];
+  prereqExcluded: string[];
+}
+
 // Pure candidate selection: given the transcript-derived context, decide which
 // course codes enter the pool and label each anchor / major-requirement /
 // elective. Network-free so it can be unit-tested directly.
@@ -47,14 +77,16 @@ export function selectCandidatePool(params: {
   level: number;
   outlines: OutlineLite[];
   courseQuality: (code: string) => { rating: number; reviews: number };
-  curatedElectives?: string[]; // ordered best-first "known-good" codes
-  averseSubjects?: Set<string>; // depts to skip for electives (weak subjects)
+  curatedElectives?: string[];
+  averseSubjects?: Set<string>;
   maxPool?: number;
-}): CandidateCourse[] {
+  prereqMap?: PrereqMap;
+}): SelectCandidatePoolResult {
   const maxPool = params.maxPool ?? DEFAULT_MAX_POOL;
   const major = params.major.toUpperCase();
   const completed = params.completed;
   const averse = params.averseSubjects ?? new Set<string>();
+  const prereqMap = params.prereqMap ?? {};
 
   const anchorCodes = Array.from(new Set(params.anchors.map(normalizeCode)));
   const anchorSet = new Set(anchorCodes);
@@ -85,6 +117,15 @@ export function selectCandidatePool(params: {
   const isEligible = (o: OutlineLite, code: string) =>
     !completed.has(code) && !anchorSet.has(code);
 
+  const hasPrereqsMet = (code: string) => {
+    const node = prereqMap[code];
+    if (!node) return true; // no prereq data → assume eligible
+    return prereqSatisfied(node, completed);
+  };
+
+  // Track courses excluded due to unsatisfied prereqs (for diagnostics).
+  const prereqExcluded: string[] = [];
+
   // Major requirements: same-dept courses at or slightly above the student's
   // current level (heuristic — no real requirement graph exists in the data).
   const maxLevel = Math.min(params.level + 100, 400);
@@ -96,6 +137,11 @@ export function selectCandidatePool(params: {
     })
     .map((o) => ({ o, code: normalizeCode(`${o.dept} ${o.number}`) }))
     .filter(({ o, code }) => isEligible(o, code))
+    .filter(({ code }) => {
+      if (hasPrereqsMet(code)) return true;
+      prereqExcluded.push(code);
+      return false;
+    })
     .sort((a, b) => (parseInt(a.o.number) || 0) - (parseInt(b.o.number) || 0))
     .map(({ o, code }) => ({
       code,
@@ -115,6 +161,11 @@ export function selectCandidatePool(params: {
     .filter((o) => courseLevel(o.number) >= 100)
     .map((o) => ({ o, code: normalizeCode(`${o.dept} ${o.number}`) }))
     .filter(({ o, code }) => isEligible(o, code))
+    .filter(({ code }) => {
+      if (hasPrereqsMet(code)) return true;
+      prereqExcluded.push(code);
+      return false;
+    })
     .map(({ o, code }) => {
       const q = params.courseQuality(code);
       return {
@@ -145,7 +196,10 @@ export function selectCandidatePool(params: {
   const electiveTake = Math.max(budget - majors.length, 0);
   const electives = electiveCandidates.slice(0, electiveTake);
 
-  return [...anchors, ...majors, ...electives];
+  return {
+    candidates: [...anchors, ...majors, ...electives],
+    prereqExcluded,
+  };
 }
 
 // SFU groups a lecture with its tutorials/labs by the hundreds digit of the
@@ -263,8 +317,15 @@ export async function buildCspPool(params: {
   preferences: SchedulerPreferences;
   rmp: RmpIndex;
   fetchSections: FetchSections;
+  prereqExcluded?: string[];
 }): Promise<{ courses: CspCourse[]; diagnostics: CspDiagnostics }> {
-  const { candidates, preferences, rmp, fetchSections } = params;
+  const {
+    candidates,
+    preferences,
+    rmp,
+    fetchSections,
+    prereqExcluded = [],
+  } = params;
 
   const fetched = await Promise.all(
     candidates.map(async (cand) => {
@@ -315,6 +376,7 @@ export async function buildCspPool(params: {
     diagnostics: {
       anchorsNotOffered,
       anchorsUnplaceable,
+      prereqExcluded,
       poolSize: courses.length,
     },
   };

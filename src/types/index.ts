@@ -213,3 +213,11 @@ export interface ParsedTranscriptCourse {
   grade?: string;
   units_completed?: number;
 }
+
+// Prerequisite expression tree from the SFU courses API.
+export type PrereqNode =
+  | { type: "course"; id: string }
+  | { type: "and"; children: PrereqNode[] }
+  | { type: "or"; children: PrereqNode[] };
+
+export type PrereqMap = Record<string, PrereqNode>;

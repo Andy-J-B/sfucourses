@@ -3,6 +3,7 @@ import {
   CourseWithSectionDetails,
   GeneratedSchedule,
   InstructorReviewSummary,
+  PrereqMap,
   SchedulerPreferences,
 } from "@types";
 import { toTermCode } from "@utils/format";
@@ -118,15 +119,20 @@ export async function generateSchedules(
   const level = detectLevel(completedCodes, major);
 
   // Fetch the reference data the pool builder needs, in parallel.
-  const [outlinesRaw, courseReviews, instructorReviews] = await Promise.all([
-    getCourseAPIData("/outlines?short=true").catch(() => []),
-    getCourseAPIData("/reviews/courses").catch(
-      () => [] as CourseReviewSummary[]
-    ),
-    getCourseAPIData("/reviews/instructors").catch(
-      () => [] as InstructorReviewSummary[]
-    ),
-  ]);
+  const [outlinesRaw, courseReviews, instructorReviews, prereqRaw] =
+    await Promise.all([
+      getCourseAPIData("/outlines?short=true").catch(() => []),
+      getCourseAPIData("/reviews/courses").catch(
+        () => [] as CourseReviewSummary[]
+      ),
+      getCourseAPIData("/reviews/instructors").catch(
+        () => [] as InstructorReviewSummary[]
+      ),
+      getCourseAPIData("/prerequisites").catch(() => ({})),
+    ]);
+
+  const prereqMap: PrereqMap =
+    prereqRaw && typeof prereqRaw === "object" ? prereqRaw : {};
 
   const outlines: OutlineLite[] = (
     Array.isArray(outlinesRaw) ? outlinesRaw : []
@@ -145,7 +151,7 @@ export async function generateSchedules(
   // electives (never for anchors or major requirements).
   const averseSubjects = detectAverseSubjects(completedCourses);
 
-  const candidates = selectCandidatePool({
+  const { candidates, prereqExcluded } = selectCandidatePool({
     anchors,
     major,
     completed: new Set(completedCodes.map(normalizeCode)),
@@ -154,6 +160,7 @@ export async function generateSchedules(
     courseQuality: (code) => rmp.courseQuality(code),
     curatedElectives: CURATED_ELECTIVES,
     averseSubjects,
+    prereqMap,
   });
 
   const fetchSections = async (dept: string, number: string) => {
@@ -170,6 +177,7 @@ export async function generateSchedules(
     preferences,
     rmp,
     fetchSections,
+    prereqExcluded,
   });
 
   if (diagnostics.anchorsNotOffered.length > 0) {

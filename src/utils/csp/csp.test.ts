@@ -112,7 +112,7 @@ describe("selectCandidatePool", () => {
   ];
 
   it("always includes anchors and excludes completed courses", () => {
-    const pool = selectCandidatePool({
+    const { candidates: pool } = selectCandidatePool({
       anchors: ["CMPT 307"],
       major: "CMPT",
       completed: new Set(["CMPT 225"]),
@@ -127,7 +127,7 @@ describe("selectCandidatePool", () => {
   });
 
   it("pulls same-dept major requirements at/above level and cross-dept electives", () => {
-    const pool = selectCandidatePool({
+    const { candidates: pool } = selectCandidatePool({
       anchors: ["CMPT 307"],
       major: "CMPT",
       completed: new Set(),
@@ -593,7 +593,7 @@ describe("curated electives", () => {
       { dept: "ENGL", number: "105", units: 3, title: "" },
       { dept: "PHIL", number: "120", units: 3, title: "" },
     ];
-    const pool = selectCandidatePool({
+    const { candidates: pool } = selectCandidatePool({
       anchors: ["CMPT 307"],
       major: "CMPT",
       completed: new Set(),

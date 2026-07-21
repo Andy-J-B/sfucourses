@@ -19,6 +19,7 @@ export type {
   OutlineLite,
   CandidateCourse,
   FetchSections,
+  SelectCandidatePoolResult,
 } from "./poolBuilder";
 export { solveCsp } from "./solver";
 export { scoreSolution } from "./scorer";

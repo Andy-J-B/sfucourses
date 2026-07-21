@@ -58,6 +58,7 @@ export interface CspSolution {
 export interface CspDiagnostics {
   anchorsNotOffered: string[]; // requested but no sections in term
   anchorsUnplaceable: string[]; // offered but cannot fit alongside others
+  prereqExcluded: string[]; // skipped because prereqs not met
   poolSize: number;
   reason?: string;
 }
