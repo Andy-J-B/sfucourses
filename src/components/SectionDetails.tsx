@@ -55,9 +55,9 @@ interface SectionDetailsProps {
 
 const processSchedules = (schedules: SectionSchedule[]): SectionSchedule[] =>
   schedules.flatMap((schedule) =>
-    schedule.days.split(", ").map((day) => ({
+    schedule.days.split(/[\/,]\s*/).map((day) => ({
       ...schedule,
-      days: day,
+      days: day.trim(),
     }))
   );
 

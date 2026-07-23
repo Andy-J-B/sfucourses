@@ -21,7 +21,10 @@ const getDayFromCode = (dayCode: string): string[] => {
     Th: "Thu",
     Fr: "Fri",
   };
-  return dayCode.split(", ").map((code) => dayMap[code]);
+  return dayCode
+    .split(/[\/,]\s*/)
+    .map((code) => dayMap[code.trim()])
+    .filter(Boolean);
 };
 
 const convertTimeToMinutes = (time: string): number => {

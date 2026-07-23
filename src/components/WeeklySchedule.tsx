@@ -59,8 +59,10 @@ const getDayFromCode = (dayCode: string): string[] => {
     Th: "Thu",
     Fr: "Fri",
   };
-  const days = dayCode.split(", ").map((code) => dayMap[code]);
-  return days || dayCode;
+  return dayCode
+    .split(/[\/,]\s*/)
+    .map((code) => dayMap[code.trim()])
+    .filter(Boolean) as string[];
 };
 
 interface ConflictResponse {
