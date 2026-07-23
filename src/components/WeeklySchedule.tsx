@@ -746,6 +746,32 @@ export const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
           </div>
         ))}
       </div>
+
+      {/* Online/asynchronous courses that don't appear on the grid */}
+      {coursesWithSections.length > 0 &&
+        (() => {
+          const onlineCourses = coursesWithSections.filter((course) =>
+            course.sections.every((section) =>
+              section.schedules.every(
+                (s) => !s.startTime || !s.endTime || !s.days
+              )
+            )
+          );
+          if (onlineCourses.length === 0) return null;
+          return (
+            <div className="online-courses-indicator">
+              <span className="online-courses-indicator__icon">🌐</span>
+              <div className="online-courses-indicator__text">
+                <span className="online-courses-indicator__label">
+                  Online / Asynchronous
+                </span>
+                <span className="online-courses-indicator__courses">
+                  {onlineCourses.map((c) => `${c.dept} ${c.number}`).join(", ")}
+                </span>
+              </div>
+            </div>
+          );
+        })()}
     </div>
   );
 };
