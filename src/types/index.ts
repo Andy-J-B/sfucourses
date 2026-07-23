@@ -194,6 +194,9 @@ export interface SchedulerPreferences {
   campusPreferences: string[];
   // Campus-day preference: prefer schedules that span fewer distinct days.
   preferFewerDays: boolean;
+  // When true, skip prerequisite validation — useful for users who don't want
+  // to upload a transcript or deal with prereq checking.
+  assumePrereqsMet?: boolean;
 }
 
 export interface GeneratedSchedule {

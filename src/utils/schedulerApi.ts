@@ -4,6 +4,7 @@ import {
   GeneratedSchedule,
   InstructorReviewSummary,
   PrereqMap,
+  PrereqNode,
   SchedulerPreferences,
 } from "@types";
 import { toTermCode } from "@utils/format";
@@ -25,6 +26,47 @@ import curatedElectivesData from "../data/curatedElectives.json";
 import { detectAverseSubjects } from "./transcript/academicProfile";
 
 const CURATED_ELECTIVES = curatedElectivesData.electives.map((e) => e.code);
+
+// ---------- Prerequisite helpers ----------
+
+function prereqSatisfied(node: PrereqNode, completed: Set<string>): boolean {
+  switch (node.type) {
+    case "course":
+      if (node.id.startsWith("UNITS:") || node.id.startsWith("PERMISSION:"))
+        return false;
+      if (node.id.startsWith("COREQUISITE:"))
+        return completed.has(node.id.slice(12));
+      return completed.has(node.id);
+    case "and":
+      return node.children.every((c) => prereqSatisfied(c, completed));
+    case "or":
+      return node.children.some((c) => prereqSatisfied(c, completed));
+    default:
+      return false;
+  }
+}
+
+// Walk an unsatisfied AND-node and collect the OR-groups the student hasn't
+// completed, formatted as human-readable text.
+function describeMissingReqs(node: PrereqNode, completed: Set<string>): string {
+  if (node.type === "or") {
+    const alternatives = node.children
+      .filter((c) => c.type === "course")
+      .map((c) => (c as { type: "course"; id: string }).id);
+    if (alternatives.length > 0) return alternatives.join(" or ");
+    return "advanced requirement";
+  }
+  if (node.type === "and") {
+    return node.children
+      .filter((c) => !prereqSatisfied(c, completed))
+      .map((c) => describeMissingReqs(c, completed))
+      .join(", ");
+  }
+  // course leaf — already checked upstream, but handle gracefully
+  return (node as { type: "course"; id: string }).id;
+}
+
+// ---------- End prereq helpers ----------
 
 export type { ParsedCourse, SchedulerPreferences };
 
@@ -133,6 +175,24 @@ export async function generateSchedules(
 
   const prereqMap: PrereqMap =
     prereqRaw && typeof prereqRaw === "object" ? prereqRaw : {};
+  const skipPrereqs = preferences.assumePrereqsMet === true;
+
+  // Validate anchor prerequisites early — fail with a clear message listing
+  // exactly which courses the student is missing for each anchor.
+  if (!skipPrereqs) {
+    const completedSet = new Set(completedCodes.map(normalizeCode));
+    for (const anchor of anchors) {
+      const node = prereqMap[anchor];
+      if (!node) continue;
+      if (prereqSatisfied(node, completedSet)) continue;
+
+      // Build a readable list of what's missing.
+      const missing = describeMissingReqs(node, completedSet);
+      throw new Error(
+        `${anchor} requires: ${missing}. Complete the missing course(s) first or remove ${anchor} from your desired courses.`
+      );
+    }
+  }
 
   const outlines: OutlineLite[] = (
     Array.isArray(outlinesRaw) ? outlinesRaw : []
@@ -160,7 +220,7 @@ export async function generateSchedules(
     courseQuality: (code) => rmp.courseQuality(code),
     curatedElectives: CURATED_ELECTIVES,
     averseSubjects,
-    prereqMap,
+    prereqMap: skipPrereqs ? undefined : prereqMap,
   });
 
   const fetchSections = async (dept: string, number: string) => {

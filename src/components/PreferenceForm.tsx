@@ -73,6 +73,9 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
   const [suggestionsApplied, setSuggestionsApplied] = useState(false);
   const [loadHint, setLoadHint] = useState<string | null>(null);
   const [loadApplied, setLoadApplied] = useState(false);
+  const [assumePrereqsMet, setAssumePrereqsMet] = useState(false);
+  const [customCreditTarget, setCustomCreditTarget] = useState("");
+  const [customElectiveCount, setCustomElectiveCount] = useState("");
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -234,6 +237,7 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
       avoidDays,
       campusPreferences,
       preferFewerDays,
+      assumePrereqsMet,
     });
   };
 
@@ -324,6 +328,23 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
             </p>
           </div>
 
+          <div className="preference-form__field">
+            <label className="preference-form__toggle-label">
+              <button
+                className={`preference-form__toggle ${
+                  assumePrereqsMet ? "preference-form__toggle--active" : ""
+                }`}
+                onClick={() => setAssumePrereqsMet((v) => !v)}
+              >
+                {assumePrereqsMet ? "✓ " : ""}Assume all prerequisites are met
+              </button>
+            </label>
+            <p className="preference-form__hint">
+              Skip prerequisite checking — we won&apos;t filter courses based on
+              your transcript.
+            </p>
+          </div>
+
           <div className="preference-form__actions">
             <Button label="Back" type="secondary" onClick={onBack} />
             <Button
@@ -344,36 +365,83 @@ export const PreferenceForm: React.FC<PreferenceFormProps> = ({
 
           <div className="preference-form__field">
             <label>Target Credit Load</label>
-            <div className="preference-form__term-selector">
-              {CREDIT_TARGETS.map((t) => (
-                <button
-                  key={t}
-                  className={`term-btn ${
-                    creditTarget === t ? "term-btn--active" : ""
-                  }`}
-                  onClick={() => selectCreditTarget(t)}
-                >
-                  {t} credits
-                </button>
-              ))}
+            <div className="preference-form__inline-input">
+              <div className="preference-form__term-selector">
+                {CREDIT_TARGETS.map((t) => (
+                  <button
+                    key={t}
+                    className={`term-btn ${
+                      creditTarget === t && !customCreditTarget
+                        ? "term-btn--active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      selectCreditTarget(t);
+                      setCustomCreditTarget("");
+                    }}
+                  >
+                    {t} credits
+                  </button>
+                ))}
+              </div>
+              <input
+                type="number"
+                min={3}
+                max={21}
+                step={1}
+                placeholder="Custom"
+                className="preference-form__custom-input"
+                value={customCreditTarget}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setCustomCreditTarget(v);
+                  if (v) {
+                    const num = Number(v);
+                    setCreditTarget(num);
+                    setMaxCredits(num);
+                    setMinCredits((prev) => Math.min(prev, num));
+                  }
+                }}
+              />
             </div>
             {loadHint && <p className="preference-form__hint">{loadHint}</p>}
           </div>
 
           <div className="preference-form__field">
             <label>Electives to include</label>
-            <div className="preference-form__term-selector">
-              {ELECTIVE_COUNTS.map((n) => (
-                <button
-                  key={n}
-                  className={`term-btn ${
-                    electiveCount === n ? "term-btn--active" : ""
-                  }`}
-                  onClick={() => setElectiveCount(n)}
-                >
-                  {n === 0 ? "None" : n}
-                </button>
-              ))}
+            <div className="preference-form__inline-input">
+              <div className="preference-form__term-selector">
+                {ELECTIVE_COUNTS.map((n) => (
+                  <button
+                    key={n}
+                    className={`term-btn ${
+                      electiveCount === n && !customElectiveCount
+                        ? "term-btn--active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setElectiveCount(n);
+                      setCustomElectiveCount("");
+                    }}
+                  >
+                    {n === 0 ? "None" : n}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="number"
+                min={0}
+                max={10}
+                step={1}
+                placeholder="Custom"
+                className="preference-form__custom-input"
+                value={customElectiveCount}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setCustomElectiveCount(v);
+                  if (v) setElectiveCount(Number(v));
+                }}
+              />
             </div>
             <p className="preference-form__hint">
               High-rated, easier non-major courses to round out your schedule.
